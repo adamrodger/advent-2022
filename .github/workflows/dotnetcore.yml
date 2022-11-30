@@ -1,0 +1,19 @@
+name: Build and Test
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: "7.0
+    - name: Build
+      run: dotnet build --configuration Release
+    - name: Test
+      run: dotnet test -c Release --no-build tests/AdventOfCode.Tests/AdventOfCode.Tests.csproj
