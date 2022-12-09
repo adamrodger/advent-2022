@@ -81,6 +81,42 @@ namespace AdventOfCode.Utilities
             yield return new Point2D(this.X, this.Y + 1);
         }
 
+        public IEnumerable<Point2D> Adjacent8()
+        {
+            yield return new Point2D(this.X - 1, this.Y - 1);
+            yield return new Point2D(this.X, this.Y - 1);
+            yield return new Point2D(this.X + 1, this.Y - 1);
+            yield return new Point2D(this.X - 1, this.Y);
+            yield return new Point2D(this.X + 1, this.Y);
+            yield return new Point2D(this.X - 1, this.Y + 1);
+            yield return new Point2D(this.X, this.Y + 1);
+            yield return new Point2D(this.X + 1, this.Y + 1);
+        }
+
+        /// <summary>
+        /// Move from one position to another in the given direction and number of steps
+        /// </summary>
+        /// <param name="position">Starting position</param>
+        /// <param name="bearing">Move direction</param>
+        /// <param name="steps">Move steps</param>
+        /// <returns>New position</returns>
+        public Point2D Move(Bearing bearing, int steps = 1)
+        {
+            switch (bearing)
+            {
+                case Bearing.North:
+                    return (this.X, this.Y + steps);
+                case Bearing.South:
+                    return (this.X, this.Y - steps);
+                case Bearing.East:
+                    return (this.X + steps, this.Y);
+                case Bearing.West:
+                    return (this.X - steps, this.Y);
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
         public override string ToString()
         {
             return $"{this.X}, {this.Y}";
