@@ -2,6 +2,7 @@
 _ReSharper.Caches/
 [Bb]in/
 [Oo]bj/
+BenchmarkDotNet.Artifacts/
 *.user
 .vscode/
 .idea/

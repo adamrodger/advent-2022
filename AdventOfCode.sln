@@ -11,6 +11,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{C3330C24
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdventOfCode.Tests", "tests\AdventOfCode.Tests\AdventOfCode.Tests.csproj", "{CD48646D-A16E-433B-908A-076AC76930C2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdventOfCode.Benchmarks", "tests\AdventOfCode.Benchmarks\AdventOfCode.Benchmarks.csproj", "{9680113A-B5DE-493F-A4A0-53CC9DE5900B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,18 @@ Global
 		{CD48646D-A16E-433B-908A-076AC76930C2}.Release|x64.Build.0 = Release|Any CPU
 		{CD48646D-A16E-433B-908A-076AC76930C2}.Release|x86.ActiveCfg = Release|Any CPU
 		{CD48646D-A16E-433B-908A-076AC76930C2}.Release|x86.Build.0 = Release|Any CPU
+		{9680113A-B5DE-493F-A4A0-53CC9DE5900B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9680113A-B5DE-493F-A4A0-53CC9DE5900B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9680113A-B5DE-493F-A4A0-53CC9DE5900B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9680113A-B5DE-493F-A4A0-53CC9DE5900B}.Debug|x64.Build.0 = Debug|Any CPU
+		{9680113A-B5DE-493F-A4A0-53CC9DE5900B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{9680113A-B5DE-493F-A4A0-53CC9DE5900B}.Debug|x86.Build.0 = Debug|Any CPU
+		{9680113A-B5DE-493F-A4A0-53CC9DE5900B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9680113A-B5DE-493F-A4A0-53CC9DE5900B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9680113A-B5DE-493F-A4A0-53CC9DE5900B}.Release|x64.ActiveCfg = Release|Any CPU
+		{9680113A-B5DE-493F-A4A0-53CC9DE5900B}.Release|x64.Build.0 = Release|Any CPU
+		{9680113A-B5DE-493F-A4A0-53CC9DE5900B}.Release|x86.ActiveCfg = Release|Any CPU
+		{9680113A-B5DE-493F-A4A0-53CC9DE5900B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -52,6 +66,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{8CB892D9-967A-41C3-9115-DD0DE49A8D2D} = {144280E6-139A-4C2F-A6DA-AA6488A63ECD}
 		{CD48646D-A16E-433B-908A-076AC76930C2} = {C3330C24-683D-472D-928B-329D14E87579}
+		{9680113A-B5DE-493F-A4A0-53CC9DE5900B} = {C3330C24-683D-472D-928B-329D14E87579}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F8BA1C3B-71E7-4DF4-B75A-5ADC41EEDD2D}
