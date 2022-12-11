@@ -28,21 +28,19 @@ namespace AdventOfCode
 
             foreach (string line in input)
             {
-                var parts = line.Split(' ').Take(2).ToArray();
-
-                Move them = parts[0] switch
+                Move them = line[0] switch
                 {
-                    "A" => Move.Rock,
-                    "B" => Move.Paper,
-                    "C" => Move.Scissors,
+                    'A' => Move.Rock,
+                    'B' => Move.Paper,
+                    'C' => Move.Scissors,
                     _ => throw new ArgumentOutOfRangeException()
                 };
 
-                Move us = parts[1] switch
+                Move us = line[2] switch
                 {
-                    "X" => Move.Rock,
-                    "Y" => Move.Paper,
-                    "Z" => Move.Scissors,
+                    'X' => Move.Rock,
+                    'Y' => Move.Paper,
+                    'Z' => Move.Scissors,
                     _ => throw new ArgumentOutOfRangeException()
                 };
 
@@ -72,21 +70,19 @@ namespace AdventOfCode
 
             foreach (string line in input)
             {
-                var parts = line.Split(' ').Take(2).ToArray();
-
-                Move them = parts[0] switch
+                Move them = line[0] switch
                 {
-                    "A" => Move.Rock,
-                    "B" => Move.Paper,
-                    "C" => Move.Scissors,
+                    'A' => Move.Rock,
+                    'B' => Move.Paper,
+                    'C' => Move.Scissors,
                     _ => throw new ArgumentOutOfRangeException()
                 };
 
-                Result result = parts[1] switch
+                Result result = line[2] switch
                 {
-                    "X" => Result.Lose,
-                    "Y" => Result.Draw,
-                    "Z" => Result.Win,
+                    'X' => Result.Lose,
+                    'Y' => Result.Draw,
+                    'Z' => Result.Win,
                     _ => throw new ArgumentOutOfRangeException()
                 };
 
