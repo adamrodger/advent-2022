@@ -7,7 +7,6 @@ namespace AdventOfCode.Benchmarks
     public class Benchmark
     {
         [ParamsSource(nameof(Days))]
-        [Params(10)]
         public int Day { get; set; }
 
         [ParamsSource(nameof(Parts))]
