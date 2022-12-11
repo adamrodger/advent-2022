@@ -25,7 +25,7 @@ namespace AdventOfCode
                 {
                     head = head.Move(direction);
                     tail = Follow(head, tail);
-                    
+
                     visited.Add(tail);
                 }
             }
@@ -37,7 +37,7 @@ namespace AdventOfCode
         {
             Point2D[] ropes = Enumerable.Range(0, 10).Select(r => new Point2D(0, 0)).ToArray();
             var visited = new HashSet<(int, int)> { ropes[9] };
-            
+
             foreach (string line in input)
             {
                 (Bearing direction, int steps) = Parse(line);
@@ -62,16 +62,15 @@ namespace AdventOfCode
 
         private static (Bearing direction, int steps) Parse(string line)
         {
-            string[] parts = line.Split(' ');
-            Bearing direction = parts[0] switch
+            Bearing direction = line[0] switch
             {
-                "U" => Bearing.North,
-                "D" => Bearing.South,
-                "L" => Bearing.West,
-                "R" => Bearing.East,
+                'U' => Bearing.North,
+                'D' => Bearing.South,
+                'L' => Bearing.West,
+                'R' => Bearing.East,
                 _ => throw new ArgumentOutOfRangeException()
             };
-            int steps = int.Parse(parts[1]);
+            int steps = int.Parse(line[2..]);
 
             return (direction, steps);
         }
