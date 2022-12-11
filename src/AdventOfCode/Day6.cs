@@ -1,6 +1,6 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using MoreLinq;
 
 namespace AdventOfCode
 {
@@ -15,19 +15,30 @@ namespace AdventOfCode
 
         private static int IndexOfDistinctRegion(string input, int size)
         {
+            ISet<char> seen = new HashSet<char>();
             int i = size;
+            ReadOnlySpan<char> span = input.AsSpan();
 
-            foreach (IList<char> chars in input.Window(size))
+            while (true)
             {
-                if (chars.Distinct().Count() == size)
+                ReadOnlySpan<char> slice = span[(i - size)..i];
+
+                foreach (char c in slice)
                 {
-                    break;
+                    if (!seen.Add(c))
+                    {
+                        break;
+                    }
+                }
+
+                if (seen.Count == size)
+                {
+                    return i;
                 }
 
                 i++;
+                seen.Clear();
             }
-
-            return i;
         }
     }
 }
