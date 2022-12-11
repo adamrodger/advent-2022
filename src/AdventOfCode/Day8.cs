@@ -50,7 +50,7 @@ namespace AdventOfCode
                     }
 
                     // look down
-                    IEnumerable<int> below = grid.Select(i => i[x]).TakeLast(grid.Length - y - 1);
+                    IEnumerable<int> below = grid.Select(i => i[x]).Skip(y + 1);
 
                     if (below.All(x => x < current))
                     {
