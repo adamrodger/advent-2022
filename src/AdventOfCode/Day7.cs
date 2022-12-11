@@ -59,10 +59,9 @@ namespace AdventOfCode
                 {
                     string[] parts = line.Split(' ');
                     int size = int.Parse(parts[0]);
-                    string name = parts[1];
 
                     var current = stack.Peek();
-                    current.AddFile(name, size);
+                    current.AddFile( size);
                 }
             }
 
@@ -72,7 +71,7 @@ namespace AdventOfCode
         public class Directory
         {
             private readonly ICollection<Directory> subDirectories = new List<Directory>();
-            private readonly ICollection<File> files = new List<File>();
+            private int fileSizeTotal;
 
             public string Path { get; init; }
 
@@ -83,23 +82,15 @@ namespace AdventOfCode
                 return sub;
             }
 
-            public File AddFile(string name, int size)
+            public void AddFile(int size)
             {
-                var file = new File { Path = this.Path + "/" + name, Size = size};
-                this.files.Add(file);
-                return file;
+                fileSizeTotal += size;
             }
 
             public int TotalSize()
             {
-                return this.subDirectories.Select(s => s.TotalSize()).Sum() + this.files.Select(f => f.Size).Sum();
+                return this.subDirectories.Select(s => s.TotalSize()).Sum() + this.fileSizeTotal;
             }
-        }
-
-        public class File
-        {
-            public string Path { get; init; }
-            public int Size { get; init; }
         }
     }
 }
