@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace AdventOfCode
@@ -23,23 +22,6 @@ namespace AdventOfCode
             Win = 6
         };
 
-        private static readonly IDictionary<string, Move> MoveCodes = new Dictionary<string, Move>
-        {
-            ["A"] = Move.Rock,
-            ["B"] = Move.Paper,
-            ["C"] = Move.Scissors,
-            ["X"] = Move.Rock,
-            ["Y"] = Move.Paper,
-            ["Z"] = Move.Scissors
-        };
-
-        private static readonly IDictionary<string, Result> ResultCodes = new Dictionary<string, Result>
-        {
-            ["X"] = Result.Lose,
-            ["Y"] = Result.Draw,
-            ["Z"] = Result.Win
-        };
-
         public int Part1(string[] input)
         {
             int total = 0;
@@ -47,8 +29,22 @@ namespace AdventOfCode
             foreach (string line in input)
             {
                 var parts = line.Split(' ').Take(2).ToArray();
-                Move them = MoveCodes[parts[0]];
-                Move us = MoveCodes[parts[1]];
+
+                Move them = parts[0] switch
+                {
+                    "A" => Move.Rock,
+                    "B" => Move.Paper,
+                    "C" => Move.Scissors,
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+
+                Move us = parts[1] switch
+                {
+                    "X" => Move.Rock,
+                    "Y" => Move.Paper,
+                    "Z" => Move.Scissors,
+                    _ => throw new ArgumentOutOfRangeException()
+                };
 
                 Result result = (them, us) switch
                 {
@@ -77,8 +73,22 @@ namespace AdventOfCode
             foreach (string line in input)
             {
                 var parts = line.Split(' ').Take(2).ToArray();
-                Move them = MoveCodes[parts[0]];
-                Result result = ResultCodes[parts[1]];
+
+                Move them = parts[0] switch
+                {
+                    "A" => Move.Rock,
+                    "B" => Move.Paper,
+                    "C" => Move.Scissors,
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+
+                Result result = parts[1] switch
+                {
+                    "X" => Result.Lose,
+                    "Y" => Result.Draw,
+                    "Z" => Result.Win,
+                    _ => throw new ArgumentOutOfRangeException()
+                };
 
                 Move us = (them, result) switch
                 {
