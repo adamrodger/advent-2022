@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using AdventOfCode.Utilities;
 
 namespace AdventOfCode
 {
@@ -15,14 +13,11 @@ namespace AdventOfCode
 
         public string Part1(string[] input)
         {
-            var stacks = Parse(input);
+            var stacks = ParseStacks(input);
 
             foreach (string line in input.Skip(MaxHeight + 2))
             {
-                var numbers = line.Numbers<int>();
-                int moves = numbers[0];
-                int source = numbers[1] - 1;
-                int dest = numbers[2] - 1;
+                (int moves, int source, int dest) = ParseLine(line);
 
                 for (int i = 0; i < moves; i++)
                 {
@@ -36,16 +31,12 @@ namespace AdventOfCode
 
         public string Part2(string[] input)
         {
-            var stacks = Parse(input);
+            var temp = new List<char>();
+            var stacks = ParseStacks(input);
 
             foreach (string line in input.Skip(MaxHeight + 2))
             {
-                var numbers = line.Numbers<int>();
-                int moves = numbers[0];
-                int source = numbers[1] - 1;
-                int dest = numbers[2] - 1;
-
-                var temp = new List<char>(moves);
+                (int moves, int source, int dest) = ParseLine(line);
 
                 for (int i = 0; i < moves; i++)
                 {
@@ -53,19 +44,18 @@ namespace AdventOfCode
                     temp.Add(crate);
                 }
 
-                temp.Reverse();
-
-                foreach (char c in temp)
+                foreach (char c in Enumerable.Reverse(temp))
                 {
                     stacks[dest].Push(c);
                 }
-                
+
+                temp.Clear();
             }
 
             return new string(stacks.Select(s => s.Peek()).ToArray());
         }
 
-        private static Stack<char>[] Parse(string[] input)
+        private static Stack<char>[] ParseStacks(string[] input)
         {
             var stacks = new Stack<char>[StackCount];
 
@@ -88,6 +78,17 @@ namespace AdventOfCode
             }
 
             return stacks;
+        }
+
+        private static (int Moves, int Source, int Dest) ParseLine(string line)
+        {
+            // move 1 from 3 to 5
+            string[] split = line.Split(' ');
+            int moves = int.Parse(split[1]);
+            int source = split[3][0] - '1';
+            int dest = split[5][0] - '1';
+
+            return (moves, source, dest);
         }
     }
 }
