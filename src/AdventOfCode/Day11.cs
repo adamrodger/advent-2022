@@ -90,20 +90,20 @@ namespace AdventOfCode
 
         private class Monkey
         {
-            public int Id { get; init; }
-            public Queue<long> Items { get; init; } = new();
-            public Operation Operation { get; init; }
-            public long Operand { get; init; }
-            public int Divisor { get; init; }
-            public int TrueTarget { get; init; }
-            public int FalseTarget { get; init; }
+            public int Id { get; private init; }
+            public Queue<long> Items { get; private init; } = new();
+            public Operation Operation { get; private init; }
+            public long Operand { get; private init; }
+            public int Divisor { get; private init; }
+            public int TrueTarget { get; private init; }
+            public int FalseTarget { get; private init; }
             public long Inspections { get; set; }
 
             public static Monkey Parse(string[] lines)
             {
                 int id = lines[0][7] - '0';
 
-                long[] items = lines[1].Numbers<long>();
+                IEnumerable<long> items = lines[1].TrimStart()[16..].Split(", ").Select(long.Parse);
 
                 var opLine = lines[2].Trim().Split(' ');
                 long.TryParse(opLine[5], out long opValue);
