@@ -12,8 +12,8 @@ namespace AdventOfCode
     {
         public int Part1(string[] input)
         {
-            Point2D head = (0, 0);
-            Point2D tail = (0, 0);
+            Point2D head = new(0, 0);
+            Point2D tail = new(0, 0);
 
             var visited = new HashSet<(int, int)> { tail };
 
@@ -78,7 +78,7 @@ namespace AdventOfCode
 
         private static Point2D Follow(Point2D head, Point2D tail)
         {
-            if (head == tail || head.Adjacent8().Contains(tail))
+            if (head == tail || Math.Abs(head.X - tail.X) < 2 && Math.Abs(head.Y - tail.Y) < 2)
             {
                 // already touching, don't move tail
                 return tail;

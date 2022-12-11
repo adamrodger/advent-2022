@@ -3,56 +3,8 @@ using System.Collections.Generic;
 
 namespace AdventOfCode.Utilities
 {
-    public class Point2D : IEquatable<Point2D>
+    public readonly record struct Point2D(int X, int Y)
     {
-        public int X { get; }
-
-        public int Y { get; }
-
-        public Point2D(int x, int y)
-        {
-            this.X = x;
-            this.Y = y;
-        }
-
-        public bool Equals(Point2D other)
-        {
-            return this.X == other.X && this.Y == other.Y;
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj))
-            {
-                return false;
-            }
-
-            if (obj.GetType() != this.GetType())
-            {
-                return false;
-            }
-
-            return Equals((Point2D) obj);
-        }
-
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                return (this.X * 397) ^ this.Y;
-            }
-        }
-
-        public static bool operator ==(Point2D left, Point2D right)
-        {
-            return Equals(left, right);
-        }
-
-        public static bool operator !=(Point2D left, Point2D right)
-        {
-            return !Equals(left, right);
-        }
-
         public static implicit operator (int x, int y)(Point2D point)
         {
             return (point.X, point.Y);
@@ -100,104 +52,18 @@ namespace AdventOfCode.Utilities
         /// <param name="bearing">Move direction</param>
         /// <param name="steps">Move steps</param>
         /// <returns>New position</returns>
-        public Point2D Move(Bearing bearing, int steps = 1)
+        public Point2D Move(Bearing bearing, int steps = 1) => bearing switch
         {
-            switch (bearing)
-            {
-                case Bearing.North:
-                    return (this.X, this.Y + steps);
-                case Bearing.South:
-                    return (this.X, this.Y - steps);
-                case Bearing.East:
-                    return (this.X + steps, this.Y);
-                case Bearing.West:
-                    return (this.X - steps, this.Y);
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
-        public override string ToString()
-        {
-            return $"{this.X}, {this.Y}";
-        }
+            Bearing.North => (this.X, this.Y + steps),
+            Bearing.South => (this.X, this.Y - steps),
+            Bearing.East => (this.X + steps, this.Y),
+            Bearing.West => (this.X - steps, this.Y),
+            _ => throw new ArgumentOutOfRangeException()
+        };
     }
 
-    public class Point3D : IEquatable<Point3D>
+    public readonly record struct Point3D(int X, int Y, int Z)
     {
-        public int X { get; set; }
-
-        public int Y { get; set; }
-
-        public int Z { get; set; }
-
-        public Point3D()
-        {
-        }
-
-        public Point3D(int x, int y, int z)
-        {
-            this.X = x;
-            this.Y = y;
-            this.Z = z;
-        }
-
-        public bool Equals(Point3D other)
-        {
-            if (ReferenceEquals(null, other))
-            {
-                return false;
-            }
-
-            if (ReferenceEquals(this, other))
-            {
-                return true;
-            }
-
-            return this.X == other.X && this.Y == other.Y && this.Z == other.Z;
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj))
-            {
-                return false;
-            }
-
-            if (ReferenceEquals(this, obj))
-            {
-                return true;
-            }
-
-            if (obj.GetType() != this.GetType())
-            {
-                return false;
-            }
-
-            return Equals((Point3D) obj);
-        }
-
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                var hashCode = this.X;
-                hashCode = (hashCode * 397) ^ this.Y;
-                hashCode = (hashCode * 397) ^ this.Z;
-                return hashCode;
-            }
-        }
-
-        public static bool operator ==(Point3D left, Point3D right)
-        {
-            return Equals(left, right);
-        }
-
-        public static bool operator !=(Point3D left, Point3D right)
-        {
-            return !Equals(left, right);
-        }
-
         public static implicit operator (int x, int y, int z)(Point3D point)
         {
             return (point.X, point.Y, point.Z);
@@ -231,21 +97,9 @@ namespace AdventOfCode.Utilities
             yield return new Point3D(this.X, this.Y + 1, this.Z);
         }
 
-        public override string ToString()
-        {
-            return $"{this.X}, {this.Y}, {this.Z}";
-        }
-
         public int ManhattanDistance(Point3D other)
         {
             return Math.Abs(this.X - other.X) + Math.Abs(this.Y - other.Y) + Math.Abs(this.Z - other.Z);
-        }
-
-        public void Deconstruct(out int x, out int y, out int z)
-        {
-            x = this.X;
-            y = this.Y;
-            z = this.Z;
         }
     }
 }
