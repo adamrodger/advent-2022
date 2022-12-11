@@ -5,11 +5,14 @@ using System.Text.RegularExpressions;
 
 namespace AdventOfCode.Utilities
 {
-    public static class Utilities
+    public static partial class Utilities
     {
+        [GeneratedRegex("-?\\d+")]
+        private static partial Regex NumberRegex();
+
         public static T[] Numbers<T>(this string input)
         {
-            MatchCollection matches = Regex.Matches(input, @"-?\d+");
+            MatchCollection matches = NumberRegex().Matches(input);
 
             return matches
                   .Select(m => m.Value)
