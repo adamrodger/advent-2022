@@ -13,11 +13,11 @@ namespace AdventOfCode
         // https://www.tiger-algebra.com/en/solution/least-common-multiple/lcm(2,3,5,7,11,13,17,19)/
         private const long Part2Relief = 9_699_690;
 
-        public long Part1(string[] input) => Run(input, 20, item => item / 3);
+        public long Part1(string[] input) => Run(input, 20, Part.One);
 
-        public long Part2(string[] input) => Run(input, 10_000, item => item % Part2Relief);
+        public long Part2(string[] input) => Run(input, 10_000, Part.Two);
 
-        private static long Run(string[] input, int rounds, Func<long, long> relief)
+        private static long Run(string[] input, int rounds, Part part)
         {
             IDictionary<int, Monkey> monkeys = Parse(input);
 
@@ -28,11 +28,22 @@ namespace AdventOfCode
                     var monkey = monkeys[i];
                     monkey.Inspections += monkey.Items.Count;
 
-                    while (monkey.Items.Any())
+                    while (monkey.Items.TryDequeue(out long item))
                     {
-                        long item = monkey.Items.Dequeue();
-                        item = monkey.Operation(item);
-                        item = relief(item);
+                        item = monkey.Operation switch
+                        {
+                            Operation.Square => item * item,
+                            Operation.Add => item + monkey.Operand,
+                            Operation.Multiply => item * monkey.Operand,
+                            _ => throw new ArgumentOutOfRangeException()
+                        };
+
+                        item = part switch
+                        {
+                            Part.One => item / 3,
+                            Part.Two => item % Part2Relief,
+                            _ => throw new ArgumentOutOfRangeException()
+                        };
 
                         int target = item % monkey.Divisor == 0 ? monkey.TrueTarget : monkey.FalseTarget;
                         monkeys[target].Items.Enqueue(item);
@@ -70,11 +81,19 @@ namespace AdventOfCode
             return monkeys;
         }
 
+        private enum Operation
+        {
+            Add,
+            Multiply,
+            Square
+        }
+
         private class Monkey
         {
             public int Id { get; init; }
             public Queue<long> Items { get; init; } = new();
-            public Func<long, long> Operation { get; init; }
+            public Operation Operation { get; init; }
+            public long Operand { get; init; }
             public int Divisor { get; init; }
             public int TrueTarget { get; init; }
             public int FalseTarget { get; init; }
@@ -89,11 +108,11 @@ namespace AdventOfCode
                 var opLine = lines[2].Trim().Split(' ');
                 long.TryParse(opLine[5], out long opValue);
 
-                Func<long, long> operation = (opLine[4], opLine[5]) switch
+                Operation operation = (opLine[4], opLine[5]) switch
                 {
-                    ("*", "old") => i => i * i,
-                    ("*", _) => i => i * opValue,
-                    ("+", _) => i => i + opValue,
+                    ("*", "old") => Operation.Square,
+                    ("*", _) => Operation.Multiply,
+                    ("+", _) => Operation.Add,
                     _ => throw new ArgumentOutOfRangeException()
                 };
 
@@ -106,6 +125,7 @@ namespace AdventOfCode
                     Id = id,
                     Items = new Queue<long>(items),
                     Operation = operation,
+                    Operand = opValue,
                     Divisor = divisor,
                     TrueTarget = trueTarget,
                     FalseTarget = falseTarget,
