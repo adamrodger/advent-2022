@@ -1,5 +1,5 @@
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using AdventOfCode.Utilities;
 
 namespace AdventOfCode
@@ -9,66 +9,131 @@ namespace AdventOfCode
     /// </summary>
     public class Day12
     {
+        private static readonly Point2D[] Deltas =
+        {
+            (0, -1),
+            (-1, 0),
+            (1, 0),
+            (0, 1)
+        };
+
         public int Part1(string[] input)
         {
-            (Graph<Point2D> graph, ICollection<Point2D> start, Point2D end) = BuildGraph(input, Part.One);
+            Point2D? start = (0, 0);
+            Point2D? end = (0, 0);
 
-            List<(Point2D node, int distance)> shortest = graph.GetShortestPath(start.Single(), end);
+            // find top of hill and start point
+            for (int y = 0; y < input.Length; y++)
+            {
+                string row = input[y];
 
-            return shortest.Count + 2; // for start and end node...?
+                for (int x = 0; x < row.Length; x++)
+                {
+                    if (row[x] == 'S')
+                    {
+                        start = (x, y);
+                        char[] temp = row.ToCharArray();
+                        temp[x] = 'a';
+                        row = new string(temp);
+                        input[y] = row;
+                    }
+                    else if (row[x] == 'E')
+                    {
+                        end = (x, y);
+                        char[] temp = row.ToCharArray();
+                        temp[x] = 'z';
+                        row = new string(temp);
+                        input[y] = row;
+                    }
+                }
+            }
+
+            // path from top of hill to start
+            return FindPath(input, end.Value, new HashSet<Point2D> { start.Value });
         }
 
         public int Part2(string[] input)
         {
-            (Graph<Point2D> graph, ICollection<Point2D> start, Point2D end) = BuildGraph(input, Part.Two);
+            ISet<Point2D> targets = new HashSet<Point2D>();
+            Point2D? start = (0, 0);
 
-            return start.Select(s => graph.GetShortestPath(s, end))
-                        .Where(path => path != null)
-                        .Select(path => path.Count + 2)
-                        .Min();
-        }
-
-        private static (Graph<Point2D>, ICollection<Point2D> start, Point2D end) BuildGraph(string[] input, Part part)
-        {
-            var grid = input.ToGrid();
-            var graph = new Graph<Point2D>();
-
-            ICollection<Point2D> start = new List<Point2D>();
-            Point2D end = (0, 0);
-
-            grid.ForEach((x, y, c) =>
+            // find top of hill and all 'a' points
+            for (int y = 0; y < input.Length; y++)
             {
-                Point2D current = (x, y);
+                string row = input[y];
 
-                if (c == 'E')
+                for (int x = 0; x < row.Length; x++)
                 {
-                    end = (x, y);
-                    return;
-                }
-
-                if (part == Part.Two && c == 'a')
-                {
-                    start.Add(current);
-                }
-
-                if (c == 'S')
-                {
-                    c = 'a';
-                    start.Add(current);
-                }
-
-                foreach (Point2D neighbour in grid.Adjacent4Positions(current))
-                {
-                    char neighbourValue = grid[neighbour.Y, neighbour.X];
-
-                    if (neighbourValue == 'E' || neighbourValue - c < 2)
+                    if (row[x] == 'a')
                     {
-                        graph.AddVertex(current, neighbour);
+                        targets.Add((x, y));
+                    }
+                    else if (row[x] == 'E')
+                    {
+                        start = (x, y);
+                        char[] temp = row.ToCharArray();
+                        temp[x] = 'z';
+                        row = new string(temp);
+                        input[y] = row;
                     }
                 }
-            });
+            }
 
-            return (graph, start, end);
+            // path from top of hill to first 'a' point
+            return FindPath(input, start.Value, targets);
+        }
+
+        /// <summary>
+        /// Find a path from the start to one of the given targets
+        /// </summary>
+        /// <param name="input">Input grid</param>
+        /// <param name="start">Start point</param>
+        /// <param name="targets">Targets</param>
+        /// <returns>Path cost</returns>
+        /// <exception cref="InvalidOperationException">No path found</exception>
+        private static int FindPath(string[] input, Point2D start, ISet<Point2D> targets)
+        {
+            // find path from E to the first 'a' we meet
+            Queue<(Point2D Point, int Cost)> queue = new();
+            HashSet<Point2D> visited = new() { start };
+
+            queue.Enqueue((start, 0));
+
+            while (queue.TryDequeue(out var current))
+            {
+                if (targets.Contains(current.Point))
+                {
+                    return current.Cost;
+                }
+
+                char currentValue = input[current.Point.Y][current.Point.X];
+
+                foreach (Point2D delta in Deltas)
+                {
+                    Point2D next = current.Point + delta;
+
+                    if (visited.Contains(next))
+                    {
+                        continue;
+                    }
+
+                    // stay in bounds
+                    if (next.X < 0 || next.Y < 0 || next.X >= input[0].Length || next.Y >= input.Length)
+                    {
+                        continue;
+                    }
+
+                    char nextValue = input[next.Y][next.X];
+
+                    if (nextValue - currentValue >= -1)
+                    {
+                        visited.Add(next);
+                        queue.Enqueue((next, current.Cost + 1));
+                    }
+                }
+            }
+
+            throw new InvalidOperationException("No path found");
         }
     }
 }
