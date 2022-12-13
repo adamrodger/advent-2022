@@ -65,7 +65,7 @@ namespace AdventOfCode.Tests
         [Fact]
         public void Part1_RealInput_ProducesCorrectResponse()
         {
-            var expected = -1;
+            var expected = 6395;
 
             var result = solver.Part1(GetRealInput());
             output.WriteLine($"Day 13 - Part 1 - {result}");
@@ -77,7 +77,7 @@ namespace AdventOfCode.Tests
         [Fact]
         public void Part2_SampleInput_ProducesCorrectResponse()
         {
-            var expected = -1;
+            var expected = 140;
 
             var result = solver.Part2(GetSampleInput());
 
@@ -87,25 +87,24 @@ namespace AdventOfCode.Tests
         [Fact]
         public void Part2_RealInput_ProducesCorrectResponse()
         {
-            var expected = -1;
+            var expected = 24921;
 
             var result = solver.Part2(GetRealInput());
             output.WriteLine($"Day 13 - Part 2 - {result}");
 
             Assert.Equal(expected, result);
         }
-
+        
         [Theory]
-        [InlineData("[]", "[]", true)]
-        [InlineData("[1,1,3,1,1]", "[1,1,5,1,1]", true)]
-        [InlineData("[[1],[2,3,4]]", "[[1],4]", true)]
-        [InlineData("[9]", "[[8,7,6]]", false)]
-        [InlineData("[[4,4],4,4]", "[[4,4],4,4,4]", true)]
-        [InlineData("[7,7,7,7]", "[7,7,7]", false)]
-        [InlineData("[]", "[3]", true)]
-        [InlineData("[[[]]]", "[[]]", false)]
-        [InlineData("[1,[2,[3,[4,[5,6,7]]]],8,9]", "[1,[2,[3,[4,[5,6,0]]]],8,9]", false)]
-        public void Compare_WhenCalled_ComparesCorrectly(string left, string right, bool expected)
+        [InlineData("[1,1,3,1,1]", "[1,1,5,1,1]", Day13.Outcome.Valid)]
+        [InlineData("[[1],[2,3,4]]", "[[1],4]", Day13.Outcome.Valid)]
+        [InlineData("[9]", "[[8,7,6]]", Day13.Outcome.Invalid)]
+        [InlineData("[[4,4],4,4]", "[[4,4],4,4,4]", Day13.Outcome.Valid)]
+        [InlineData("[7,7,7,7]", "[7,7,7]", Day13.Outcome.Invalid)]
+        [InlineData("[]", "[3]", Day13.Outcome.Valid)]
+        [InlineData("[[[]]]", "[[]]", Day13.Outcome.Invalid)]
+        [InlineData("[1,[2,[3,[4,[5,6,7]]]],8,9]", "[1,[2,[3,[4,[5,6,0]]]],8,9]", Day13.Outcome.Invalid)]
+        public void Compare_WhenCalled_ComparesCorrectly(string left, string right, Day13.Outcome expected)
         {
             Assert.Equal(expected, Day13.Compare(left, right));
         }
