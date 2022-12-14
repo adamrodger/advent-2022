@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using AdventOfCode.Utilities;
 
 namespace AdventOfCode
@@ -28,27 +27,50 @@ namespace AdventOfCode
 
         private static char[,] CreateGrid(string[] input, Part part)
         {
-            int height = input.SelectMany(line => line.Split(" -> ").Select(l => l.Split(',')[1]).Select(int.Parse)).Max() + 1;
-
-            if (part == Part.Two)
-            {
-                height += 2;
-            }
-
-            char[,] grid = new char[height, 1000];
-            //grid.ForEach(((x, y, _) => grid[y, x] = Air));
+            int colMin = int.MaxValue;
+            int colMax = int.MinValue;
+            int rowMax = int.MinValue;
+            var rocks = new List<List<Point2D>>(input.Length);
 
             foreach (string line in input)
             {
                 string[] corners = line.Split(" -> ");
+                var points = new List<Point2D>(corners.Length);
 
-                for (int i = 0; i < corners.Length - 1; i++)
+                foreach (string corner in corners)
                 {
-                    string[] startPoints = corners[i].Split(',');
-                    Point2D start = (int.Parse(startPoints[0]), int.Parse(startPoints[1]));
+                    string[] coords = corner.Split(',');
+                    Point2D point = (int.Parse(coords[0]), int.Parse(coords[1]));
 
-                    string[] endPoints = corners[i + 1].Split(',');
-                    Point2D end = (int.Parse(endPoints[0]), int.Parse(endPoints[1]));
+                    colMin = Math.Min(colMin, point.X);
+                    colMax = Math.Max(colMax, point.X);
+                    rowMax = Math.Max(rowMax, point.Y);
+
+                    points.Add(point);
+                }
+
+                rocks.Add(points);
+            }
+
+            // indices are inclusive
+            rowMax += 1;
+            colMax += 1;
+            colMin += 1;
+
+            if (part == Part.Two)
+            {
+                rowMax += 2;
+            }
+
+            char[,] grid = new char[rowMax, 500 + rowMax * 2];
+            //grid.ForEach(((x, y, _) => grid[y, x] = Air));
+
+            foreach (List<Point2D> coords in rocks)
+            {
+                for (int i = 0; i < coords.Count - 1; i++)
+                {
+                    Point2D start = coords[i];
+                    Point2D end = coords[i + 1];
 
                     for (int y = Math.Min(start.Y, end.Y); y <= Math.Max(start.Y, end.Y); y++)
                     {
@@ -64,7 +86,7 @@ namespace AdventOfCode
             {
                 for (int x = 0; x < grid.GetLength(1); x++)
                 {
-                    grid[height - 1, x] = Wall;
+                    grid[rowMax - 1, x] = Wall;
                 }
             }
 
