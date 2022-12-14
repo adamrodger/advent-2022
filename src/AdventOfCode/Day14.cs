@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using AdventOfCode.Utilities;
 
 namespace AdventOfCode
@@ -14,13 +15,26 @@ namespace AdventOfCode
 
         public int Part1(string[] input)
         {
-            char[,] grid = CreateGrid(input);
+            char[,] grid = CreateGrid(input, Part.One);
             return FillGrid(grid);
         }
 
-        private static char[,] CreateGrid(string[] input)
+        public int Part2(string[] input)
         {
-            char[,] grid = new char[300, 1000];
+            char[,] grid = CreateGrid(input, Part.Two);
+            return FillGrid2(grid);
+        }
+
+        private static char[,] CreateGrid(string[] input, Part part)
+        {
+            int height = input.SelectMany(line => line.Split(" -> ").Select(l => l.Split(',')[1]).Select(int.Parse)).Max() + 1;
+
+            if (part == Part.Two)
+            {
+                height += 2;
+            }
+
+            char[,] grid = new char[height, 1000];
             grid.ForEach(((x, y, _) => grid[y, x] = Air));
 
             foreach (string line in input)
@@ -42,6 +56,14 @@ namespace AdventOfCode
                             grid[y, x] = Wall;
                         }
                     }
+                }
+            }
+
+            if (part == Part.Two)
+            {
+                for (int x = 0; x < grid.GetLength(1); x++)
+                {
+                    grid[height - 1, x] = Wall;
                 }
             }
 
@@ -90,14 +112,46 @@ namespace AdventOfCode
             }
         }
 
-        public int Part2(string[] input)
+        private static int FillGrid2(char[,] grid)
         {
-            foreach (string line in input)
-            {
-                throw new NotImplementedException("Part 2 not implemented");
-            }
+            int count = 0;
 
-            return 0;
+            while (true)
+            {
+                Point2D grain = (500, 0);
+
+                while (true)
+                {
+                    if (grid[grain.Y + 1, grain.X] == Air)
+                    {
+                        grain += (0, 1);
+                        continue;
+                    }
+
+                    if (grid[grain.Y + 1, grain.X - 1] == Air)
+                    {
+                        grain += (-1, 1);
+                        continue;
+                    }
+
+                    if (grid[grain.Y + 1, grain.X + 1] == Air)
+                    {
+                        grain += (1, 1);
+                        continue;
+                    }
+
+                    // grain has settled
+                    grid[grain.Y, grain.X] = Sand;
+                    count++;
+
+                    if (grain == (500, 0))
+                    {
+                        return count;
+                    }
+
+                    break;
+                }
+            }
         }
     }
 }
