@@ -12,6 +12,7 @@ namespace AdventOfCode
         private const char Wall = '■';
         private const char Sand = 'o';
         private const char Air = '\0';
+        private const int OriginColumn = 500;
 
         public int Part1(string[] input)
         {
@@ -27,11 +28,10 @@ namespace AdventOfCode
 
         private static char[,] CreateGrid(string[] input, Part part)
         {
-            int colMin = int.MaxValue;
-            int colMax = int.MinValue;
             int rowMax = int.MinValue;
             var rocks = new List<List<Point2D>>(input.Length);
 
+            // parse the rock instructions
             foreach (string line in input)
             {
                 string[] corners = line.Split(" -> ");
@@ -41,9 +41,7 @@ namespace AdventOfCode
                 {
                     string[] coords = corner.Split(',');
                     Point2D point = (int.Parse(coords[0]), int.Parse(coords[1]));
-
-                    colMin = Math.Min(colMin, point.X);
-                    colMax = Math.Max(colMax, point.X);
+                    
                     rowMax = Math.Max(rowMax, point.Y);
 
                     points.Add(point);
@@ -54,16 +52,14 @@ namespace AdventOfCode
 
             // indices are inclusive
             rowMax += 1;
-            colMax += 1;
-            colMin += 1;
 
             if (part == Part.Two)
             {
                 rowMax += 2;
             }
 
-            char[,] grid = new char[rowMax, 500 + rowMax * 2];
-            //grid.ForEach(((x, y, _) => grid[y, x] = Air));
+            // create the grid with rock walls added
+            char[,] grid = new char[rowMax, OriginColumn + rowMax * 2];
 
             foreach (List<Point2D> coords in rocks)
             {
@@ -84,6 +80,7 @@ namespace AdventOfCode
 
             if (part == Part.Two)
             {
+                // add an infinite wall to the bottom
                 for (int x = 0; x < grid.GetLength(1); x++)
                 {
                     grid[rowMax - 1, x] = Wall;
@@ -99,7 +96,7 @@ namespace AdventOfCode
 
             while (true)
             {
-                Point2D grain = (500, 0);
+                Point2D grain = (OriginColumn, 0);
 
                 while (true)
                 {
@@ -143,30 +140,34 @@ namespace AdventOfCode
             int count = 0;
 
             var queue = new Queue<Point2D>();
-            queue.Enqueue((500, 0));
+            queue.Enqueue((OriginColumn, 0));
 
             while (queue.TryDequeue(out Point2D grain))
             {
                 count++;
 
-                int dy = grain.Y + 1;
+                Point2D tryDown = grain + down;
 
-                if (grid[dy, grain.X] == Air)
+                if (grid[tryDown.Y, tryDown.X] == Air)
                 {
-                    grid[dy, grain.X] = Sand;
-                    queue.Enqueue(grain + down);
+                    grid[tryDown.Y, tryDown.X] = Sand;
+                    queue.Enqueue(tryDown);
                 }
 
-                if (grid[dy, grain.X - 1] == Air)
+                Point2D tryLeft = grain + left;
+
+                if (grid[tryLeft.Y, tryLeft.X] == Air)
                 {
-                    grid[dy, grain.X - 1] = Sand;
-                    queue.Enqueue(grain + left);
+                    grid[tryLeft.Y, tryLeft.X] = Sand;
+                    queue.Enqueue(tryLeft);
                 }
 
-                if (grid[dy, grain.X + 1] == Air)
+                Point2D tryRight = grain + right;
+
+                if (grid[tryRight.Y, tryRight.X] == Air)
                 {
-                    grid[dy, grain.X + 1] = Sand;
-                    queue.Enqueue(grain + right);
+                    grid[tryRight.Y, tryRight.X] = Sand;
+                    queue.Enqueue(tryRight);
                 }
             }
 
