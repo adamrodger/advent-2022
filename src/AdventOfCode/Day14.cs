@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using AdventOfCode.Utilities;
 
@@ -11,7 +12,7 @@ namespace AdventOfCode
     {
         private const char Wall = '■';
         private const char Sand = 'o';
-        private const char Air = ' ';
+        private const char Air = '\0';
 
         public int Part1(string[] input)
         {
@@ -35,7 +36,7 @@ namespace AdventOfCode
             }
 
             char[,] grid = new char[height, 1000];
-            grid.ForEach(((x, y, _) => grid[y, x] = Air));
+            //grid.ForEach(((x, y, _) => grid[y, x] = Air));
 
             foreach (string line in input)
             {
@@ -114,44 +115,40 @@ namespace AdventOfCode
 
         private static int FillGrid2(char[,] grid)
         {
+            Point2D down = (0, 1);
+            Point2D left = (-1, 1);
+            Point2D right = (1, 1);
             int count = 0;
 
-            while (true)
+            var queue = new Queue<Point2D>();
+            queue.Enqueue((500, 0));
+
+            while (queue.TryDequeue(out Point2D grain))
             {
-                Point2D grain = (500, 0);
+                count++;
 
-                while (true)
+                int dy = grain.Y + 1;
+
+                if (grid[dy, grain.X] == Air)
                 {
-                    if (grid[grain.Y + 1, grain.X] == Air)
-                    {
-                        grain += (0, 1);
-                        continue;
-                    }
+                    grid[dy, grain.X] = Sand;
+                    queue.Enqueue(grain + down);
+                }
 
-                    if (grid[grain.Y + 1, grain.X - 1] == Air)
-                    {
-                        grain += (-1, 1);
-                        continue;
-                    }
+                if (grid[dy, grain.X - 1] == Air)
+                {
+                    grid[dy, grain.X - 1] = Sand;
+                    queue.Enqueue(grain + left);
+                }
 
-                    if (grid[grain.Y + 1, grain.X + 1] == Air)
-                    {
-                        grain += (1, 1);
-                        continue;
-                    }
-
-                    // grain has settled
-                    grid[grain.Y, grain.X] = Sand;
-                    count++;
-
-                    if (grain == (500, 0))
-                    {
-                        return count;
-                    }
-
-                    break;
+                if (grid[dy, grain.X + 1] == Air)
+                {
+                    grid[dy, grain.X + 1] = Sand;
+                    queue.Enqueue(grain + right);
                 }
             }
+
+            return count;
         }
     }
 }
