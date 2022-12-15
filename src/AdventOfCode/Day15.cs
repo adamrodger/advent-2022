@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using AdventOfCode.Utilities;
+using Optional;
+using Optional.Unsafe;
 
 namespace AdventOfCode
 {
@@ -33,7 +36,7 @@ namespace AdventOfCode
                 sensors.Add(sensor);
             }
 
-            int total = 0;
+            var ranges = new List<(int min, int max)>();
 
             foreach (Sensor sensor in sensors)
             {
@@ -46,11 +49,28 @@ namespace AdventOfCode
                 int minRow = sensor.MinX + steps;
                 int maxRow = sensor.MaxX - steps;
 
-                // this is wrong, what about overlaps?
-                total += maxRow - minRow;
+                ranges.Add((minRow, maxRow));
             }
 
-            return total;
+            // merge the ranges together.....
+            while (true)
+            {
+                var overlap = NextOverlap(ranges);
+
+                if (!overlap.HasValue)
+                {
+                    break;
+                }
+
+                ((int min, int max) left, (int min, int max) right) = overlap.ValueOrFailure();
+
+                ranges.Remove(left);
+                ranges.Remove(right);
+
+                ranges.Add((Math.Min(left.min, right.min), Math.Max(left.max, right.max)));
+            }
+
+            return ranges.Select(r => r.max - r.min).Sum();
         }
 
         public int Part2(string[] input)
@@ -61,6 +81,30 @@ namespace AdventOfCode
             }
 
             return 0;
+        }
+
+        private static Option<((int min, int max) left, (int min, int max) right)> NextOverlap(ICollection<(int min, int max)> ranges)
+        {
+            foreach ((int min, int max) left in ranges)
+            {
+                foreach ((int min, int max) right in ranges)
+                {
+                    if (left == right)
+                    {
+                        continue;
+                    }
+
+                    if (left.min > right.max || left.max < right.min)
+                    {
+                        // no overlap
+                        continue;
+                    }
+
+                    return (left, right).Some();
+                }
+            }
+
+            return Option.None<((int, int), (int, int))>();
         }
 
         private record Sensor(Point2D Location, Point2D Beacon, int MinX, int MaxX, int MinY, int MaxY);
