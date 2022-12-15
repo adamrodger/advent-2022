@@ -46,9 +46,8 @@ namespace AdventOfCode.Utilities
         }
 
         /// <summary>
-        /// Move from one position to another in the given direction and number of steps
+        /// Move from this position to another in the given direction and number of steps
         /// </summary>
-        /// <param name="position">Starting position</param>
         /// <param name="bearing">Move direction</param>
         /// <param name="steps">Move steps</param>
         /// <returns>New position</returns>
@@ -60,6 +59,8 @@ namespace AdventOfCode.Utilities
             Bearing.West => (this.X - steps, this.Y),
             _ => throw new ArgumentOutOfRangeException()
         };
+
+        public int ManhattanDistance(Point2D other) => Math.Abs(this.X - other.X) + Math.Abs(this.Y -other.Y);
     }
 
     public readonly record struct Point3D(int X, int Y, int Z)
