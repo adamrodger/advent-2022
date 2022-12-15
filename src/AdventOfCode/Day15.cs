@@ -16,6 +16,13 @@ namespace AdventOfCode
         {
             ICollection<Sensor> sensors = ParseSensors(input);
             ICollection<(int min, int max)> ranges = ClosedLocations(sensors, 2_000_000);
+
+            /*
+             * From part 2 we know that actually there's only 1 range at this point because y=2_000_000
+             * will always be one contiguous region. In the general case that's not true because the
+             * answer for part 2 could theoretically be on y=2_000_000, so we'll stick with this general
+             * solution instead of that minor optimisation
+             */
             return ranges.Select(r => r.max - r.min).Sum();
         }
 
@@ -71,21 +78,20 @@ namespace AdventOfCode
 
             foreach (string line in input)
             {
-                var numbers = line.Numbers<int>();
+                // Sensor at x=2, y=18: closest beacon is at x=-2, y=15
+                string[] split = line.Split(' ');
 
-                (int sensorX, int sensorY, int beaconX, int beaconY) = (numbers[0], numbers[1], numbers[2], numbers[3]);
+                (int sensorX, int sensorY, int beaconX, int beaconY) = (int.Parse(split[2][2..^1]),
+                                                                        int.Parse(split[3][2..^1]),
+                                                                        int.Parse(split[8][2..^1]),
+                                                                        int.Parse(split[9][2..]));
 
                 Point2D location = (sensorX, sensorY);
                 Point2D beacon = (beaconX, beaconY);
 
                 int radius = location.ManhattanDistance(beacon);
 
-                int minX = sensorX - radius;
-                int maxX = sensorX + radius;
-                int minY = sensorY - radius;
-                int maxY = sensorY + radius;
-
-                var sensor = new Sensor(location, beacon, radius, minX, maxX, minY, maxY);
+                var sensor = new Sensor(location, radius);
                 sensors.Add(sensor);
             }
 
@@ -104,16 +110,19 @@ namespace AdventOfCode
 
             foreach (Sensor sensor in sensors)
             {
-                if (sensor.MinY > y || sensor.MaxY < y)
+                int minY = sensor.Location.Y - sensor.Radius;
+                int maxY = sensor.Location.Y + sensor.Radius;
+
+                if (minY > y || maxY < y)
                 {
                     continue;
                 }
 
                 int steps = Math.Abs(sensor.Location.Y - y);
-                int minRow = sensor.MinX + steps;
-                int maxRow = sensor.MaxX - steps;
+                int minX = sensor.Location.X - sensor.Radius + steps;
+                int maxX = sensor.Location.X + sensor.Radius - steps;
 
-                ranges.Add((minRow, maxRow));
+                ranges.Add((minX, maxX));
             }
 
             // merge the ranges together.....
@@ -166,6 +175,6 @@ namespace AdventOfCode
             return Option.None<((int, int), (int, int))>();
         }
 
-        private record Sensor(Point2D Location, Point2D Beacon, int Radius, int MinX, int MaxX, int MinY, int MaxY);
+        private record Sensor(Point2D Location, int Radius);
     }
 }
