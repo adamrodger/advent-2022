@@ -23,22 +23,40 @@ namespace AdventOfCode
         {
             ICollection<Sensor> sensors = ParseSensors(input);
 
-            // brute force, ohhhhhhhhhhhh yeahhhhhhhh
-            for (int y = 0; y < 4_000_000; y++)
+            var leftCoefficients = new List<int>(sensors.Count * 2);
+            var rightCoefficients = new List<int>(sensors.Count * 2);
+
+            // get the 4 gradients created by the diamond around each sensor
+            foreach (Sensor sensor in sensors)
             {
-                ICollection<(int min, int max)> ranges = ClosedLocations(sensors, y);
-
-                if (ranges.Count < 2)
-                {
-                    // every row except the required one must be completely full
-                    continue;
-                }
-
-                long x = Math.Min(ranges.First().max, ranges.Last().max) + 1;
-                return (x * 4_000_000) + y;
+                leftCoefficients.Add(sensor.Location.Y - sensor.Location.X + sensor.Radius + 1);
+                leftCoefficients.Add(sensor.Location.Y - sensor.Location.X- sensor.Radius - 1);
+                rightCoefficients.Add(sensor.Location.Y + sensor.Location.X + sensor.Radius + 1);
+                rightCoefficients.Add(sensor.Location.Y + sensor.Location.X - sensor.Radius - 1);
             }
 
-            // 1075151795 -- too low... stupid fucking longs :D
+            // intersect each left-traveling gradient line with each right-traveling one
+            foreach (int left in leftCoefficients)
+            {
+                foreach (int right in rightCoefficients)
+                {
+                    // find where the 2 sensor lines intersect
+                    Point2D intersect = ((right - left) / 2, (left + right) / 2);
+
+                    if (intersect.X is <= 0 or >= 4_000_000 || intersect.Y is <= 0 or >= 4_000_000)
+                    {
+                        // stay inside the bounded box
+                        continue;
+                    }
+
+                    if (sensors.All(sensor => sensor.Location.ManhattanDistance(intersect) > sensor.Radius))
+                    {
+                        // this point is out of range of every scanner
+                        return 4_000_000L * intersect.X + intersect.Y;
+                    }
+                }
+            }
+
             throw new InvalidOperationException("No single point found");
         }
 
@@ -60,14 +78,14 @@ namespace AdventOfCode
                 Point2D location = (sensorX, sensorY);
                 Point2D beacon = (beaconX, beaconY);
 
-                int distance = location.ManhattanDistance(beacon);
+                int radius = location.ManhattanDistance(beacon);
 
-                int minX = sensorX - distance;
-                int maxX = sensorX + distance;
-                int minY = sensorY - distance;
-                int maxY = sensorY + distance;
+                int minX = sensorX - radius;
+                int maxX = sensorX + radius;
+                int minY = sensorY - radius;
+                int maxY = sensorY + radius;
 
-                var sensor = new Sensor(location, beacon, minX, maxX, minY, maxY);
+                var sensor = new Sensor(location, beacon, radius, minX, maxX, minY, maxY);
                 sensors.Add(sensor);
             }
 
@@ -148,6 +166,6 @@ namespace AdventOfCode
             return Option.None<((int, int), (int, int))>();
         }
 
-        private record Sensor(Point2D Location, Point2D Beacon, int MinX, int MaxX, int MinY, int MaxY);
+        private record Sensor(Point2D Location, Point2D Beacon, int Radius, int MinX, int MaxX, int MinY, int MaxY);
     }
 }
