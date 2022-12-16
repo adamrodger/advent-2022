@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using AdventOfCode.Utilities;
 
 namespace AdventOfCode
 {
@@ -12,34 +13,40 @@ namespace AdventOfCode
         public int Part1(string[] input)
         {
             (IDictionary<string, Valve> valves, IList<Valve> importantValves) = ParseInput(input);
-            int[,] distance = CalculateDistanceMatrix(valves);
+            Valve start = valves["AA"];
+            int[,] distances = CalculateDistanceMatrix(valves);
 
             // permute important values, as long as the time cost stays below 30, and calculate their score
-            int max = int.MinValue;
-
-            foreach (IEnumerable<Valve> permutation in Permutations(distance, valves["AA"], importantValves.ToHashSet(), new HashSet<Valve>(), 30))
-            {
-                int time = 30;
-                int released = 0;
-                Valve current = valves["AA"];
-
-                foreach (Valve next in permutation)
-                {
-                    int cost = distance[current.Index, next.Index] + 1;
-                    time -= cost;
-                    released += time * next.Rate;
-                    current = next;
-                }
-
-                max = Math.Max(released, max);
-            }
-
-            return max;
+            var permutations = Permutations(distances, start, importantValves.ToHashSet(), Array.Empty<Valve>(), 30);
+            return permutations.Select(p => CalculateScore(p, distances, start, 30)).Max();
         }
 
         public int Part2(string[] input)
         {
-            throw new NotImplementedException();
+            (IDictionary<string, Valve> valves, IList<Valve> importantValves) = ParseInput(input);
+            Valve start = valves["AA"];
+            int[,] distances = CalculateDistanceMatrix(valves);
+
+            // permute important values, as long as the time cost stays below 30, and calculate their score
+            var myPermutations = Permutations(distances, start, importantValves.ToHashSet(), Array.Empty<Valve>(), 26).ToArray();
+            var myScores = myPermutations.Select(p => (CalculateScore(p, distances, start, 26), p)).OrderByDescending(p => p.Item1).ToArray();
+
+            foreach ((int i, (int score, IList<Valve> opened)) in myScores.Enumerate())
+            {
+                foreach ((int score2, IList<Valve> opened2) in myScores[(i+1)..])
+                {
+                    if (opened.Intersect(opened2).Any())
+                    {
+                        // our opened valves and elephant opened valves must be disjoint
+                        continue;
+                    }
+
+                    int combinedScore = score + score2;
+                    return combinedScore;
+                }
+            }
+
+            throw new InvalidOperationException("Couldn't find a combined score");
         }
 
         private static (IDictionary<string, Valve>, IList<Valve> importantValves) ParseInput(string[] input)
@@ -120,11 +127,11 @@ namespace AdventOfCode
         /// <param name="visited">Visited nodes</param>
         /// <param name="time">Remaining time</param>
         /// <returns>All valid permutations</returns>
-        private static IEnumerable<IEnumerable<Valve>> Permutations(int[,] distances,
-                                                                    Valve current,
-                                                                    ISet<Valve> unvisited,
-                                                                    ISet<Valve> visited,
-                                                                    int time)
+        private static IEnumerable<IList<Valve>> Permutations(int[,] distances,
+                                                              Valve current,
+                                                              ISet<Valve> unvisited,
+                                                              IList<Valve> visited,
+                                                              int time)
         {
             foreach (Valve next in unvisited)
             {
@@ -139,16 +146,39 @@ namespace AdventOfCode
                 ISet<Valve> nextTodo = unvisited.ToHashSet();
                 nextTodo.Remove(next);
 
-                ISet<Valve> nextDone = visited.ToHashSet();
-                nextDone.Add(next);
+                IList<Valve> nextDone = visited.Append(next).ToList();
 
-                foreach (IEnumerable<Valve> nextPermutation in Permutations(distances, next, nextTodo, nextDone, time - cost))
+                foreach (IList<Valve> nextPermutation in Permutations(distances, next, nextTodo, nextDone, time - cost))
                 {
                     yield return nextPermutation;
                 }
             }
 
             yield return visited;
+        }
+
+        /// <summary>
+        /// Calculate the score for the given path from the start node
+        /// </summary>
+        /// <param name="path">Path to take</param>
+        /// <param name="distances">Distance matrix</param>
+        /// <param name="start">Start node</param>
+        /// <param name="time">Total amount of time available</param>
+        /// <returns>Score for the path</returns>
+        private static int CalculateScore(IList<Valve> path, int[,] distances, Valve start, int time)
+        {
+            int released = 0;
+            Valve current = start;
+
+            foreach (Valve next in path)
+            {
+                int cost = distances[current.Index, next.Index] + 1;
+                time -= cost;
+                released += time * next.Rate;
+                current = next;
+            }
+
+            return released;
         }
 
         private record Valve(string Id, int Rate, ICollection<string> Paths, int Index);
