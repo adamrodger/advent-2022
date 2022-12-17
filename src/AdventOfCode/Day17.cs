@@ -56,60 +56,40 @@ namespace AdventOfCode
         public long Part2(string[] input)
         {
             IList<char> instructions = input.First().ToCharArray();
-
-            int repeatPoint = instructions.Count * Shapes.Length;
-            long height = Simulate(instructions, repeatPoint);
-
-            long secondHeight = Simulate(instructions, repeatPoint * 2);
-            long subsequentHeight = height - secondHeight;
-
-            const long requiredRounds = 1_000_000_000_000; // 2022
-            long fullRounds = requiredRounds / repeatPoint;
-
-            // there's one partial batch to add on at the end also
-            int remainingShapes = (int)(requiredRounds - (fullRounds * repeatPoint));
-            long remainingHeight = Simulate(instructions, remainingShapes);
-
-            // this gets close but doesn't work because each batch may tessellate with the one beneath it,
-            // so the height wouldn't increase by the full amount. The first batch has a solid floor to
-            // fall onto, whereas each subsequent batch doesn't. You need to take off the overlapping amount
-            // between each batch to get the right answer
-            long fullHeight = (height * fullRounds) + remainingHeight;
-
-            // ???????? Can you use the occupied set to get the top and bottom?
-            const long overlapAmount = 0; 
-            long overlaps = fullRounds * overlapAmount;
-
-            return fullHeight - overlaps;
+            return Simulate(instructions, 1_000_000_000_000);
         }
 
-        private static int Simulate(IList<char> instructions, int rounds)
+        private static long Simulate(IList<char> instructions, long rounds)
         {
-            HashSet<Point2D> occupied = new();
+            // can't use Point2D because we need y to be long instead of int
+            HashSet<(int X, long Y)> occupied = new();
+            Dictionary<(int move, long time), (long time, long height)> seenStates = new();
 
             // add the floor
-            occupied.UnionWith(Enumerable.Range(LeftEdge, RightEdge + 1).Select(x => new Point2D(x, -1)));
+            occupied.UnionWith(Enumerable.Range(LeftEdge, RightEdge + 1).Select(x => (x, 0L)));
 
             int moves = 0;
-            int shapes = 0;
-            int height = 0;
-
+            long shapes = 0;
+            long height = 0;
+            long cycleHeight = 0;
+            
             while (shapes < rounds)
             {
-                Shape shape = Shapes[shapes++ % Shapes.Length];
+                Shape shape = Shapes[shapes % Shapes.Length];
 
                 // move to start location
-                Point2D[] points = shape.Points.Select(p => new Point2D(p.X + 2, p.Y + height + 3)).ToArray();
+                (int X, long Y)[] points = shape.Points.Select(p => (p.X + 2, p.Y + height + 4)).ToArray();
 
                 // repeat L/R shift then down until stopping
                 while (true)
                 {
-                    char move = instructions[moves++ % instructions.Count];
+                    char move = instructions[moves];
+                    moves = (moves + 1) % instructions.Count;
 
                     // try a L/R shift
                     if (move == LeftMove && points.All(p => p.X > LeftEdge))
                     {
-                        Point2D[] shiftPoints = points.Select(p => new Point2D(p.X - 1, p.Y)).ToArray();
+                        (int X, long Y)[] shiftPoints = points.Select(p => (p.X - 1, y: p.Y)).ToArray();
 
                         if (!shiftPoints.Any(occupied.Contains))
                         {
@@ -118,7 +98,7 @@ namespace AdventOfCode
                     }
                     else if (move == RightMove && points.All(p => p.X < RightEdge))
                     {
-                        Point2D[] shiftPoints = points.Select(p => new Point2D(p.X + 1, p.Y)).ToArray();
+                        (int X, long Y)[] shiftPoints = points.Select(p => (p.X + 1, y: p.Y)).ToArray();
 
                         if (!shiftPoints.Any(occupied.Contains))
                         {
@@ -126,22 +106,42 @@ namespace AdventOfCode
                         }
                     }
 
-                    Point2D[] downPoints = points.Select(p => new Point2D(p.X, p.Y - 1)).ToArray();
+                    (int X, long Y)[] downPoints = points.Select(p => (x: p.X, p.Y - 1)).ToArray();
 
                     // check if we would collide with floor or a settled shape
                     if (downPoints.Any(occupied.Contains))
                     {
-                        height = Math.Max(height, points.Max(p => p.Y) + 1);
+                        height = Math.Max(height, points.Max(p => p.Y));
                         occupied.UnionWith(points);
+                        
+                        (int move, long time) state = (moves, shapes % 5);
+
+                        if (seenStates.ContainsKey(state) && shapes >= 2022)
+                        {
+                            // we can simulate one huge jump as far as possible before completing the simulation
+                            (long previousMove, long previousHeight) = seenStates[state];
+
+                            long deltaHeight = height - previousHeight;
+                            long deltaMove = shapes - previousMove;
+                            long cycles = (rounds - shapes) / deltaMove;
+
+                            cycleHeight += cycles * deltaHeight;
+                            shapes += cycles * deltaMove;
+                        }
+
+                        seenStates[state] = (shapes, height);
+
                         break;
                     }
 
-                    // move down
+                    // apply the downward move
                     points = downPoints;
                 }
+
+                shapes++;
             }
-            
-            return height;
+
+            return height + cycleHeight;
         }
 
         private record Shape(string Id, ICollection<Point2D> Points);

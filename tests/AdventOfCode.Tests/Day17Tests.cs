@@ -53,7 +53,7 @@ namespace AdventOfCode.Tests
         [Fact]
         public void Part2_SampleInput_ProducesCorrectResponse()
         {
-            var expected = 1514285714288;
+            var expected = 1_514_285_714_288;
 
             var result = solver.Part2(GetSampleInput());
 
@@ -63,7 +63,7 @@ namespace AdventOfCode.Tests
         [Fact]
         public void Part2_RealInput_ProducesCorrectResponse()
         {
-            var expected = -1;
+            var expected = 1_553_982_300_884;
 
             var result = solver.Part2(GetRealInput());
             output.WriteLine($"Day 17 - Part 2 - {result}");
