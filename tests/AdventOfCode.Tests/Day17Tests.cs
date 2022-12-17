@@ -68,6 +68,7 @@ namespace AdventOfCode.Tests
             var result = solver.Part2(GetRealInput());
             output.WriteLine($"Day 17 - Part 2 - {result}");
 
+            // 1554593201864 too high
             Assert.Equal(expected, result);
         }
     }

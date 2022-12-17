@@ -50,6 +50,41 @@ namespace AdventOfCode
         public int Part1(string[] input)
         {
             IList<char> instructions = input.First().ToCharArray();
+            return (int)Simulate(instructions, 2022);
+        }
+
+        public long Part2(string[] input)
+        {
+            IList<char> instructions = input.First().ToCharArray();
+
+            int repeatPoint = instructions.Count * Shapes.Length;
+            long height = Simulate(instructions, repeatPoint);
+
+            long secondHeight = Simulate(instructions, repeatPoint * 2);
+            long subsequentHeight = height - secondHeight;
+
+            const long requiredRounds = 1_000_000_000_000; // 2022
+            long fullRounds = requiredRounds / repeatPoint;
+
+            // there's one partial batch to add on at the end also
+            int remainingShapes = (int)(requiredRounds - (fullRounds * repeatPoint));
+            long remainingHeight = Simulate(instructions, remainingShapes);
+
+            // this gets close but doesn't work because each batch may tessellate with the one beneath it,
+            // so the height wouldn't increase by the full amount. The first batch has a solid floor to
+            // fall onto, whereas each subsequent batch doesn't. You need to take off the overlapping amount
+            // between each batch to get the right answer
+            long fullHeight = (height * fullRounds) + remainingHeight;
+
+            // ???????? Can you use the occupied set to get the top and bottom?
+            const long overlapAmount = 0; 
+            long overlaps = fullRounds * overlapAmount;
+
+            return fullHeight - overlaps;
+        }
+
+        private static int Simulate(IList<char> instructions, int rounds)
+        {
             HashSet<Point2D> occupied = new();
 
             // add the floor
@@ -59,7 +94,7 @@ namespace AdventOfCode
             int shapes = 0;
             int height = 0;
 
-            while (shapes < 2022)
+            while (shapes < rounds)
             {
                 Shape shape = Shapes[shapes++ % Shapes.Length];
 
@@ -105,20 +140,8 @@ namespace AdventOfCode
                     points = downPoints;
                 }
             }
-
-            // 2820 too low
-            // 2990 too low
+            
             return height;
-        }
-
-        public long Part2(string[] input)
-        {
-            foreach (string line in input)
-            {
-                throw new NotImplementedException("Part 2 not implemented");
-            }
-
-            return 0;
         }
 
         private record Shape(string Id, ICollection<Point2D> Points);
