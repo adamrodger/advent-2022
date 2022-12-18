@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
 
 namespace AdventOfCode
 {
@@ -35,8 +33,8 @@ namespace AdventOfCode
 
         public int Part2(string[] input)
         {
-            Packet extra1 = Parse(new Queue<char>("[[2]]"));
-            Packet extra2 = Parse(new Queue<char>("[[6]]"));
+            Packet extra1 = Parse("[[2]]");
+            Packet extra2 = Parse("[[6]]");
 
             List<Packet> packets = input.Where(l => !string.IsNullOrEmpty(l))
                                         .Select(Parse)
@@ -54,67 +52,72 @@ namespace AdventOfCode
         /// </summary>
         /// <param name="line">Line to parse</param>
         /// <returns>Parsed packet</returns>
-        private static Packet Parse(string line) => Parse(new Queue<char>(line));
+        private static Packet Parse(string line)
+        {
+            int i = 0;
+            return Parse(line.AsSpan(), ref i);
+        }
 
         /// <summary>
-        /// Parse a packet from a queue of characters, which will be mutated as the packet is parsed
+        /// Parse a packet from the given read index, which will be mutated as parsing progresses
         /// </summary>
         /// <param name="line">Line to parse</param>
+        /// <param name="i">Current read index</param>
         /// <returns>Parsed packet</returns>
         /// <exception cref="NotSupportedException">Malformed line</exception>
-        private static Packet Parse(Queue<char> line) => line.Peek() switch
+        private static Packet Parse(ReadOnlySpan<char> line, ref int i) => line[i] switch
         {
             // e.g. [[[5,4],5]]
-            '[' => ParseList(line),
-            >= '0' and <= '9' => ParseNumber(line),
-            _ => throw new NotSupportedException($"Unable to parse item for line starting {line.Peek()}")
+            '[' => ParseList(line, ref i),
+            >= '0' and <= '9' => ParseNumber(line, ref i),
+            _ => throw new NotSupportedException($"Unable to parse item for line starting {line[0]}")
         };
 
         /// <summary>
-        /// Parse a list packet from the start of the line
+        /// Parse a list packet from the index onwards
         /// </summary>
         /// <param name="line">Line to parse</param>
+        /// /// <param name="i">Current read index</param>
         /// <returns>List packet</returns>
-        private static ListPacket ParseList(Queue<char> line)
+        private static ListPacket ParseList(ReadOnlySpan<char> line, ref int i)
         {
-            char next = line.Dequeue();
-            Debug.Assert(next == '[');
+            i++; // skip over opening [
 
             ListPacket packet = new ListPacket(new List<Packet>());
 
-            while (line.Peek() != ']')
+            while (line[i] != ']')
             {
-                if (line.Peek() == ',')
+                if (line[i] == ',')
                 {
                     // skip comma
-                    line.Dequeue();
+                    i++;
                 }
 
-                Packet child = Parse(line);
+                Packet child = Parse(line, ref i);
                 packet.Children.Add(child);
             }
 
-            next = line.Dequeue();
-            Debug.Assert(next == ']');
+            i++; // skip closing ]
 
             return packet;
         }
 
         /// <summary>
-        /// Parse a number from the start of the line
+        /// Parse a number from the index onwards
         /// </summary>
         /// <param name="line">Line to parse</param>
+        /// /// <param name="i">Current read index</param>
         /// <returns>Parsed number</returns>
-        private static NumberPacket ParseNumber(Queue<char> line)
+        private static NumberPacket ParseNumber(ReadOnlySpan<char> line, ref int i)
         {
-            StringBuilder s = new StringBuilder();
+            int start = i;
 
-            while (char.IsAsciiDigit(line.Peek()))
+            while (char.IsAsciiDigit(line[i]))
             {
-                s.Append(line.Dequeue());
+                i++;
             }
 
-            int number = int.Parse(s.ToString());
+            int number = int.Parse(line[start..i]);
             return new NumberPacket(number);
         }
 
