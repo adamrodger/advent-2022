@@ -15,8 +15,8 @@ namespace AdventOfCode
 
             foreach (string line in input)
             {
-                int[] numbers = line.Numbers<int>();
-                Point3D point = new Point3D(numbers[0], numbers[1], numbers[2]);
+                string[] numbers = line.Split(',');
+                Point3D point = new Point3D(int.Parse(numbers[0]), int.Parse(numbers[1]), int.Parse(numbers[2]));
                 points.Add(point);
             }
 
@@ -43,8 +43,8 @@ namespace AdventOfCode
 
             foreach (string line in input)
             {
-                int[] numbers = line.Numbers<int>();
-                Point3D point = new Point3D(numbers[0], numbers[1], numbers[2]);
+                string[] numbers = line.Split(',');
+                Point3D point = new Point3D(int.Parse(numbers[0]), int.Parse(numbers[1]), int.Parse(numbers[2]));
                 points.Add(point);
 
                 minX = Math.Min(minX, point.X);
