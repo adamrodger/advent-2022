@@ -94,7 +94,7 @@ namespace AdventOfCode
             {
                 foreach (Point3D adjacent in point.Adjacent6())
                 {
-                    if (external.Contains(adjacent) && !points.Contains(adjacent))
+                    if (external.Contains(adjacent))
                     {
                         total++;
                     }
