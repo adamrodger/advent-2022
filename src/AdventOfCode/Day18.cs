@@ -39,6 +39,7 @@ namespace AdventOfCode
         public int Part2(string[] input)
         {
             HashSet<Point3D> points = new();
+            int total = 0;
             int minX = int.MaxValue, maxX = int.MinValue, minY = int.MaxValue, maxY = int.MinValue, minZ = int.MaxValue, maxZ = int.MinValue;
 
             foreach (string line in input)
@@ -56,17 +57,14 @@ namespace AdventOfCode
             }
 
             // need room to go around the extremes
-            minX--;
-            maxX++;
-            minY--;
-            maxY++;
-            minZ--;
-            maxZ++;
+            minX--; maxX++;
+            minY--; maxY++;
+            minZ--; maxZ++;
 
-            // start on the outside of the ball and expand everywhere to get external points
+            // start on the outside of the ball and expand everywhere to find external faces
             Point3D current = new(minX, minY, minZ);
 
-            HashSet<Point3D> external = new() { current };
+            HashSet<Point3D> seen = new() { current };
             Queue<Point3D> queue = new();
             queue.Enqueue(current);
 
@@ -74,29 +72,28 @@ namespace AdventOfCode
             {
                 foreach (Point3D adjacent in current.Adjacent6())
                 {
-                    // stay in bounds
                     if (adjacent.X < minX || adjacent.X > maxX || adjacent.Y < minY || adjacent.Y > maxY || adjacent.Z < minZ || adjacent.Z > maxZ)
                     {
+                        // stay in bounds
                         continue;
                     }
 
-                    if (!external.Contains(adjacent) && !points.Contains(adjacent))
+                    if (seen.Contains(adjacent))
                     {
-                        queue.Enqueue(adjacent);
-                        external.Add(adjacent);
+                        // don't revisit
+                        continue;
                     }
-                }
-            }
 
-            int total = 0;
-
-            foreach (Point3D point in points)
-            {
-                foreach (Point3D adjacent in point.Adjacent6())
-                {
-                    if (external.Contains(adjacent))
+                    if (points.Contains(adjacent))
                     {
+                        // found an external face
                         total++;
+                    }
+                    else
+                    {
+                        // explore into more open space
+                        queue.Enqueue(adjacent);
+                        seen.Add(adjacent);
                     }
                 }
             }
