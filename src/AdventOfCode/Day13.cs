@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using Newtonsoft.Json.Linq;
+using System.Text;
 
 namespace AdventOfCode
 {
@@ -14,10 +15,14 @@ namespace AdventOfCode
         {
             int i = 1;
             int total = 0;
+            var comparer = new PacketComparer();
 
             foreach (string[] lines in input.Append(string.Empty).Chunk(3))
             {
-                if (Compare(lines[0], lines[1]) == Outcome.Valid)
+                Packet left = Parse(lines[0]);
+                Packet right = Parse(lines[1]);
+
+                if (comparer.Compare(left, right) <= 0)
                 {
                     total += i;
                 }
@@ -30,96 +35,123 @@ namespace AdventOfCode
 
         public int Part2(string[] input)
         {
-            var packets = input.Where(l => !string.IsNullOrEmpty(l)).Concat(new[] { "[[2]]", "[[6]]" }).ToList();
+            Packet extra1 = Parse(new Queue<char>("[[2]]"));
+            Packet extra2 = Parse(new Queue<char>("[[6]]"));
+
+            List<Packet> packets = input.Where(l => !string.IsNullOrEmpty(l))
+                                        .Select(Parse)
+                                        .Append(extra1)
+                                        .Append(extra2)
+                                        .ToList();
 
             packets.Sort(new PacketComparer());
 
-            return (packets.IndexOf("[[2]]") + 1) * (packets.IndexOf("[[6]]") + 1);
+            return (packets.IndexOf(extra1) + 1) * (packets.IndexOf(extra2) + 1);
         }
 
-        public static Outcome Compare(string left, string right)
-        {
-            JToken leftObj = JArray.Parse(left);
-            JToken rightObj = JArray.Parse(right);
+        /// <summary>
+        /// Parse a packet from a string
+        /// </summary>
+        /// <param name="line">Line to parse</param>
+        /// <returns>Parsed packet</returns>
+        private static Packet Parse(string line) => Parse(new Queue<char>(line));
 
-            return Compare(leftObj, rightObj);
-        }
-
-        private static Outcome Compare(JToken left, JToken right)
+        /// <summary>
+        /// Parse a packet from a queue of characters, which will be mutated as the packet is parsed
+        /// </summary>
+        /// <param name="line">Line to parse</param>
+        /// <returns>Parsed packet</returns>
+        /// <exception cref="NotSupportedException">Malformed line</exception>
+        private static Packet Parse(Queue<char> line) => line.Peek() switch
         {
-            switch (left.Type, right.Type)
+            // e.g. [[[5,4],5]]
+            '[' => ParseList(line),
+            >= '0' and <= '9' => ParseNumber(line),
+            _ => throw new NotSupportedException($"Unable to parse item for line starting {line.Peek()}")
+        };
+
+        /// <summary>
+        /// Parse a list packet from the start of the line
+        /// </summary>
+        /// <param name="line">Line to parse</param>
+        /// <returns>List packet</returns>
+        private static ListPacket ParseList(Queue<char> line)
+        {
+            char next = line.Dequeue();
+            Debug.Assert(next == '[');
+
+            ListPacket packet = new ListPacket(new List<Packet>());
+
+            while (line.Peek() != ']')
             {
-                case (JTokenType.Integer, JTokenType.Integer):
-                    long leftValue = (long)((JValue)left).Value;
-                    long rightValue = (long)((JValue)right).Value;
+                if (line.Peek() == ',')
+                {
+                    // skip comma
+                    line.Dequeue();
+                }
 
-                    return leftValue == rightValue
-                               ? Outcome.Undecided
-                               : leftValue < rightValue
-                                   ? Outcome.Valid
-                                   : Outcome.Invalid;
-
-                case (JTokenType.Array, JTokenType.Array):
-                    List<JToken> leftParts = left.Children().ToList();
-                    List<JToken> rightParts = right.Children().ToList();
-
-                    for (int i = 0; i < leftParts.Count; i++)
-                    {
-                        if (rightParts.Count < i + 1)
-                        {
-                            // right ran out
-                            return Outcome.Invalid;
-                        }
-
-                        Outcome comparison = Compare(leftParts[i], rightParts[i]);
-
-                        if (comparison != Outcome.Undecided)
-                        {
-                            return comparison;
-                        }
-                    }
-
-                    if (leftParts.Count == rightParts.Count)
-                    {
-                        return Outcome.Undecided;
-                    }
-
-                    return Outcome.Valid; // left was shorter, so valid
-
-                case (JTokenType.Array, JTokenType.Integer):
-                    JArray tempRight = new JArray(new[] { right });
-                    return Compare(left, tempRight);
-
-                case (JTokenType.Integer, JTokenType.Array):
-                    JArray tempLeft = new JArray(new[] { left });
-                    return Compare(tempLeft, right);
-
-                default:
-                    throw new NotSupportedException();
+                Packet child = Parse(line);
+                packet.Children.Add(child);
             }
 
+            next = line.Dequeue();
+            Debug.Assert(next == ']');
+
+            return packet;
         }
 
-        public enum Outcome
+        /// <summary>
+        /// Parse a number from the start of the line
+        /// </summary>
+        /// <param name="line">Line to parse</param>
+        /// <returns>Parsed number</returns>
+        private static NumberPacket ParseNumber(Queue<char> line)
         {
-            Valid,
-            Invalid,
-            Undecided
-        }
+            StringBuilder s = new StringBuilder();
 
-        public class PacketComparer : IComparer<string>
-        {
-            /// <summary>Compares two objects and returns a value indicating whether one is less than, equal to, or greater than the other.</summary>
-            /// <param name="x">The first object to compare.</param>
-            /// <param name="y">The second object to compare.</param>
-            /// <returns>A signed integer that indicates the relative values of <paramref name="x" /> and <paramref name="y" />, as shown in the following table.
-            /// <list type="table"><listheader><term> Value</term><description> Meaning</description></listheader><item><term> Less than zero</term><description><paramref name="x" /> is less than <paramref name="y" />.</description></item><item><term> Zero</term><description><paramref name="x" /> equals <paramref name="y" />.</description></item><item><term> Greater than zero</term><description><paramref name="x" /> is greater than <paramref name="y" />.</description></item></list></returns>
-            public int Compare(string x, string y) => Day13.Compare(x, y) switch
+            while (char.IsAsciiDigit(line.Peek()))
             {
-                Outcome.Valid => -1,
-                Outcome.Invalid => 1,
-                _ => 0
+                s.Append(line.Dequeue());
+            }
+
+            int number = int.Parse(s.ToString());
+            return new NumberPacket(number);
+        }
+
+        private abstract record Packet;
+        private record ListPacket(IList<Packet> Children) : Packet;
+        private record NumberPacket(int Value) : Packet;
+
+        private class PacketComparer : IComparer<Packet>
+        {
+            public int Compare(Packet x, Packet y) => (x, y) switch
+            {
+                (NumberPacket left, NumberPacket right) => left.Value - right.Value,
+                (ListPacket left, ListPacket right) => Compare(left, right),
+                (ListPacket left, NumberPacket right) => Compare(left, new ListPacket(new Packet[] { right })),
+                (NumberPacket left, ListPacket right) => Compare(new ListPacket(new Packet[] { left }), right),
+                _ => throw new ArgumentOutOfRangeException()
             };
+
+            private int Compare(ListPacket left, ListPacket right)
+            {
+                // compare left and right children one by one and stop if we hit an unordered pair
+                for (int i = 0; i < Math.Min(left.Children.Count, right.Children.Count); i++)
+                {
+                    Packet leftPacket = left.Children[i];
+                    Packet rightPacket = right.Children[i];
+
+                    int compare = this.Compare(leftPacket, rightPacket);
+
+                    if (compare != 0)
+                    {
+                        return compare;
+                    }
+                }
+
+                // child collections were in order, compare by length instead
+                return left.Children.Count - right.Children.Count;
+            }
         }
     }
 }

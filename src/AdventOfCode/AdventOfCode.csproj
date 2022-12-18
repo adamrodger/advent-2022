@@ -7,7 +7,6 @@
 
   <ItemGroup>
     <PackageReference Include="MoreLinq" Version="3.3.2" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="Optional" Version="4.0.0" />
   </ItemGroup>
 
