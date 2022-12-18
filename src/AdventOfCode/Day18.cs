@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using AdventOfCode.Utilities;
 
 namespace AdventOfCode
@@ -56,11 +55,18 @@ namespace AdventOfCode
                 maxZ = Math.Max(maxZ, point.Z);
             }
 
-            // start in the centre of the ball and expand outwards to get the internal points
-            Point3D current = new(maxX - minX, maxY - minY, maxZ - minZ);
-            Debug.Assert(!points.Contains(current));
+            // need room to go around the extremes
+            minX--;
+            maxX++;
+            minY--;
+            maxY++;
+            minZ--;
+            maxZ++;
 
-            HashSet<Point3D> seen = new() { current };
+            // start on the outside of the ball and expand everywhere to get external points
+            Point3D current = new(minX, minY, minZ);
+
+            HashSet<Point3D> external = new() { current };
             Queue<Point3D> queue = new();
             queue.Enqueue(current);
 
@@ -68,61 +74,33 @@ namespace AdventOfCode
             {
                 foreach (Point3D adjacent in current.Adjacent6())
                 {
+                    // stay in bounds
                     if (adjacent.X < minX || adjacent.X > maxX || adjacent.Y < minY || adjacent.Y > maxY || adjacent.Z < minZ || adjacent.Z > maxZ)
                     {
                         continue;
                     }
 
-                    if (!seen.Contains(adjacent) && !points.Contains(adjacent))
+                    if (!external.Contains(adjacent) && !points.Contains(adjacent))
                     {
                         queue.Enqueue(adjacent);
-                        seen.Add(adjacent);
+                        external.Add(adjacent);
                     }
                 }
             }
-
-            // get the bounding box of internal stuff
-            /*int internalMinX = int.MaxValue,
-                internalMaxX = int.MinValue,
-                internalMinY = int.MaxValue,
-                internalMaxY = int.MinValue,
-                internalMinZ = int.MaxValue,
-                internalMaxZ = int.MinValue;
-
-            foreach (Point3D point in seen)
-            {
-                internalMinX = Math.Min(internalMinX, point.X);
-                internalMaxX = Math.Max(internalMaxX, point.X);
-                internalMinY = Math.Min(internalMinY, point.Y);
-                internalMaxY = Math.Max(internalMaxY, point.Y);
-                internalMinZ = Math.Min(internalMinZ, point.Z);
-                internalMaxZ = Math.Max(internalMaxZ, point.Z);
-            }*/
 
             int total = 0;
 
             foreach (Point3D point in points)
             {
-                /*
-                Point3D left = point with { X = point.X - 1 };
-                Point3D right = point with { X = point.X + 1 };
-                Point3D bottom = point with { Y = point.Y - 1 };
-                Point3D top = point with { Y = point.Y + 1 };
-                Point3D back = point with { Z = point.Z - 1 };
-                Point3D front = point with { Z = point.Z + 1 };
-                */
-
                 foreach (Point3D adjacent in point.Adjacent6())
                 {
-                    if (!seen.Contains(adjacent) && !points.Contains(adjacent))
+                    if (external.Contains(adjacent) && !points.Contains(adjacent))
                     {
                         total++;
                     }
                 }
             }
-
-            // 3280 too high
-            // 1998 too low
+            
             return total;
         }
     }
