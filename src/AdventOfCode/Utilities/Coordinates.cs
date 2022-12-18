@@ -98,6 +98,16 @@ namespace AdventOfCode.Utilities
             yield return new Point3D(this.X, this.Y + 1, this.Z);
         }
 
+        public IEnumerable<Point3D> Adjacent6()
+        {
+            yield return this with { X = this.X - 1 };
+            yield return this with { X = this.X + 1 };
+            yield return this with { Y = this.Y - 1 };
+            yield return this with { Y = this.Y + 1 };
+            yield return this with { Z = this.Z - 1 };
+            yield return this with { Z = this.Z + 1 };
+        }
+
         public int ManhattanDistance(Point3D other)
         {
             return Math.Abs(this.X - other.X) + Math.Abs(this.Y - other.Y) + Math.Abs(this.Z - other.Z);
