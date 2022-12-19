@@ -31,7 +31,7 @@ namespace AdventOfCode.Tests
             };
         }
 
-        [Fact]
+        [Fact(Skip = "Takes too long")]
         public void Part1_SampleInput_ProducesCorrectResponse()
         {
             var expected = 33;
@@ -41,7 +41,7 @@ namespace AdventOfCode.Tests
             Assert.Equal(expected, result);
         }
 
-        [Fact]
+        [Fact(Skip = "Takes too long")]
         public void Part1_RealInput_ProducesCorrectResponse()
         {
             var expected = 978;
@@ -52,20 +52,10 @@ namespace AdventOfCode.Tests
             Assert.Equal(expected, result);
         }
 
-        [Fact]
-        public void Part2_SampleInput_ProducesCorrectResponse()
-        {
-            var expected = -1;
-
-            var result = solver.Part2(GetSampleInput());
-
-            Assert.Equal(expected, result);
-        }
-
-        [Fact]
+        [Fact(Skip = "Takes too long")]
         public void Part2_RealInput_ProducesCorrectResponse()
         {
-            var expected = -1;
+            var expected = 15939;
 
             var result = solver.Part2(GetRealInput());
             output.WriteLine($"Day 19 - Part 2 - {result}");
