@@ -22,30 +22,6 @@ namespace AdventOfCode.Tests
             return input;
         }
 
-        private static string[] GetSampleInput()
-        {
-            return new string[]
-            {
-                "1",
-                "2",
-                "-3",
-                "3",
-                "-2",
-                "0",
-                "4"
-            };
-        }
-
-        [Fact]
-        public void Part1_SampleInput_ProducesCorrectResponse()
-        {
-            var expected = 3;
-
-            var result = solver.Part1(GetSampleInput());
-
-            Assert.Equal(expected, result);
-        }
-
         [Fact]
         public void Part1_RealInput_ProducesCorrectResponse()
         {
@@ -58,19 +34,9 @@ namespace AdventOfCode.Tests
         }
 
         [Fact]
-        public void Part2_SampleInput_ProducesCorrectResponse()
-        {
-            var expected = -1;
-
-            var result = solver.Part2(GetSampleInput());
-
-            Assert.Equal(expected, result);
-        }
-
-        [Fact]
         public void Part2_RealInput_ProducesCorrectResponse()
         {
-            var expected = -1;
+            var expected = 2897373276210;
 
             var result = solver.Part2(GetRealInput());
             output.WriteLine($"Day 20 - Part 2 - {result}");
