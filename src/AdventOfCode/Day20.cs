@@ -15,84 +15,93 @@ namespace AdventOfCode
 
         private static long Simulate(string[] input, int rounds, int multiplier)
         {
-            LinkedList<long> values = new(input.Select(x => long.Parse(x) * multiplier));
+            // create a circular ring of nodes
+            Node[] values = input.Select(x => long.Parse(x) * multiplier)
+                                 .Select(n => new Node { Value = n })
+                                 .ToArray();
 
-            // populate node lookup
-            Dictionary<int, LinkedListNode<long>> lookup = new(values.Count);
-            LinkedListNode<long> current = values.First;
-            LinkedListNode<long> zero = null;
-
-            for (int i = 0; i < values.Count; i++)
+            foreach ((Node first, Node second) in values.Zip(values[1..]))
             {
-                lookup[i] = current;
-
-                if (current.Value == 0)
-                {
-                    zero = current;
-                }
-
-                current = current.Next;
+                first.Next = second;
+                second.Previous = first;
             }
+
+            values[0].Previous = values[^1];
+            values[^1].Next = values[0];
 
             // mix the values for the required number of rounds
             for (int round = 0; round < rounds; round++)
             {
-                Mix(values, lookup);
+                Mix(values);
             }
 
-            current = zero;
+            // sum the nodes at index 1000, 2000 and 3000 after the node with value 0
             long total = 0;
+            Node current = values.First(v => v.Value == 0);
 
-            for (int i = 1; i <= 3001; i++)
+            for (int i = 0; i < 3; i++)
             {
-                if (i > 1000 && i % 1000 == 1)
+                for (int j = 0; j < 1000; j++)
                 {
-                    total += current.Value;
+                    current = current.Next;
                 }
 
-                current = current.Next ?? values.First;
+                total += current.Value;
             }
 
             return total;
         }
 
-        private static void Mix(LinkedList<long> values, IDictionary<int, LinkedListNode<long>> lookup)
+        private static void Mix(IList<Node> values)
         {
             // mix the values
-            for (int i = 0; i < lookup.Count; i++)
+            foreach (Node current in values)
             {
-                // remove the current node
-                LinkedListNode<long> current = lookup[i];
-                LinkedListNode<long> sibling = current.Next ?? values.First;
+                // take the node out of the ring
+                Node previous = current.Previous;
+                Node next = current.Next;
 
-                values.Remove(current);
+                previous.Next = next;
+                next.Previous = previous;
 
-                // add it back in the right place
-                long moves = current.Value;
-
-                if (moves > 0)
+                // move to where it needs to be inserted
+                if (current.Value > 0)
                 {
-                    moves %= values.Count;
+                    // go forwards
+                    long moves = current.Value % (values.Count - 1);
 
                     for (int m = 0; m < moves; m++)
                     {
-                        sibling = sibling.Next ?? values.First;
+                        previous = previous.Next;
+                        next = next.Next;
                     }
-
-                    values.AddBefore(sibling, current);
                 }
                 else
                 {
-                    moves = Math.Abs(moves) % values.Count;
+                    // go backwards
+                    long moves = Math.Abs(current.Value) % (values.Count - 1);
 
                     for (int m = 0; m < moves; m++)
                     {
-                        sibling = sibling.Previous ?? values.Last;
+                        previous = previous.Previous;
+                        next = next.Previous;
                     }
-
-                    values.AddBefore(sibling, current);
                 }
+
+                // add it back in to the ring
+                previous.Next = current;
+                current.Previous = previous;
+
+                next.Previous = current;
+                current.Next = next;
             }
+        }
+
+        private class Node
+        {
+            public long Value { get; init; }
+            public Node Next { get; set; }
+            public Node Previous { get; set; }
         }
     }
 }
