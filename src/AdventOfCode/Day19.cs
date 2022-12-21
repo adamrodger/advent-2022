@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using AdventOfCode.Utilities;
+using Optional;
 
 namespace AdventOfCode
 {
@@ -27,15 +28,13 @@ namespace AdventOfCode
         public long Part2(string[] input)
         {
             Blueprint first = Parse(input[0]);
-            long optimum = Optimise(first, 32);
-
             Blueprint second = Parse(input[1]);
-            optimum *= Optimise(second, 32);
-
             Blueprint third = Parse(input[2]);
-            optimum *= Optimise(third, 32);
 
-            // 13167 -- too low
+            long optimum = Optimise(first, 32);
+            optimum *= Optimise(second, 32);
+            optimum *= Optimise(third, 32);
+            
             return optimum;
         }
 
@@ -51,130 +50,149 @@ namespace AdventOfCode
             Blueprint blueprint = new(numbers[0], numbers[1], numbers[2], numbers[3], numbers[4], numbers[5], numbers[6], maxOreCost);
             return blueprint;
         }
-        
+
+        /// <summary>
+        /// Get the optimum number of geodes that can be made within the given time limit with the given cost blueprint
+        /// </summary>
+        /// <param name="blueprint">Blueprint of costs</param>
+        /// <param name="remaining">Remaining time</param>
+        /// <returns>Maximum number of geodes that would be constructed</returns>
         private static int Optimise(Blueprint blueprint, int remaining)
         {
-            return Optimise(blueprint,
-                            remaining,
-                            new GameState(1, 0, 0, 0, 0, 0, 0),
-                            new Dictionary<(int remaining, GameState state), int>());
-        }
+            int max = 0;
+            var state = new GameState(remaining, 1, 0, 0, 0, 0, 0, 0, 0);
 
-        private static int Optimise(Blueprint blueprint,
-                                    int remaining,
-                                    GameState state,
-                                    IDictionary<(int remaining, GameState state), int> cache)
-        {
-            if (remaining == 0)
+            var queue = new Queue<GameState>();
+            queue.Enqueue(state);
+
+            while (queue.TryDequeue(out state))
             {
-                // can't make any new geodes no matter what we do if we've run out of time :D
-                return 0;
+                int potential = state.Geodes                                 // how many geodes we already have
+                              + (state.GeodeRobots * state.Remaining)        // how many we'll definitely mine
+                              + (state.Remaining - 1) * state.Remaining / 2; // how many we could mine if we built a geode robot every time
+
+                if (potential <= max)
+                {
+                    // this branch could never win, give up
+                    continue;
+                }
+
+                bool builtRobot = false;
+
+                if (state.Remaining > 1)
+                {
+                    foreach (RobotType type in Enum.GetValues<RobotType>())
+                    {
+                        TryBuild(state, blueprint, type).MatchSome(next =>
+                        {
+                            queue.Enqueue(next);
+                            builtRobot = true;
+                        });
+                    }
+                }
+
+                if (!builtRobot)
+                {
+                    // we can no longer build any robots in this state, so fast-forward to the end to see what the result is
+                    potential = state.Geodes + (state.GeodeRobots * state.Remaining);
+                    max = Math.Max(max, potential);
+                }
             }
 
-            GameState next = state with
+            return max;
+        }
+
+        /// <summary>
+        /// From the given starting point and cost blueprint, try to build the given robot type
+        /// </summary>
+        /// <param name="state">Starting state</param>
+        /// <param name="blueprint">Blueprint of costs</param>
+        /// <param name="type">Robot type to try to build</param>
+        /// <returns>The next state at which the robot is built, or None if the robot can't/shouldn't be built</returns>
+        private static Option<GameState> TryBuild(GameState state, Blueprint blueprint, RobotType type)
+        {
+            // should we build this robot or have we already got enough to satisfy demand every turn?
+            bool shouldBuild = type switch
             {
-                Ore = Math.Min(state.Ore + state.OreRobots, blueprint.MaxOreCost * remaining),
-                Clay = Math.Min(state.Clay + state.ClayRobots, blueprint.ObsidianRobotClayCost * remaining),
-                Obsidian = Math.Min(state.Obsidian + state.ObsidianRobots, blueprint.GeodeRobotObsidianCost * remaining)
+                RobotType.Ore => state.OreRobots < blueprint.MaxOreCost,
+                RobotType.Clay => state.ClayRobots < blueprint.ObsidianRobotClayCost,
+                RobotType.Obsidian => state.Obsidian < blueprint.GeodeRobotObsidianCost,
+                RobotType.Geode => true,
+                _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
 
-            (int, GameState) key = (remaining, next);
-
-            if (cache.TryGetValue(key, out int maxGeodes))
+            if (!shouldBuild)
             {
-                // seen this state before, just return cached max
-                return maxGeodes;
+                return Option.None<GameState>();
             }
 
-            int geodes;
-            bool builtRobot = false;
+            // can we build this robot or is there not enough time left to gather the required resources?
+            int potentialOre = state.Ore + (state.OreRobots * state.Remaining);
+            int potentialClay = state.Clay + (state.ClayRobots * state.Remaining);
+            int potentialObsidian = state.Obsidian + (state.ObsidianRobots * state.Remaining);
 
-            if (state.Obsidian >= blueprint.GeodeRobotObsidianCost && state.Ore >= blueprint.GeodeRobotOreCost)
+            bool canBuild = type switch
             {
-                // try to build a geode robot
-                geodes = Optimise(blueprint,
-                                  remaining - 1,
-                                  next with
-                                  {
-                                      Ore = next.Ore - blueprint.GeodeRobotOreCost,
-                                      Obsidian = next.Obsidian - blueprint.GeodeRobotObsidianCost,
-                                      GeodeRobots = next.GeodeRobots + 1
-                                  },
-                                  cache);
+                RobotType.Ore => potentialOre >= blueprint.OreRobotCost,
+                RobotType.Clay => potentialOre >= blueprint.ClayRobotCost,
+                RobotType.Obsidian => potentialOre >= blueprint.ObsidianRobotOreCost && potentialClay >= blueprint.ObsidianRobotClayCost,
+                RobotType.Geode => potentialOre >= blueprint.GeodeRobotOreCost && potentialObsidian >= blueprint.GeodeRobotObsidianCost,
+                _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+            };
 
-                maxGeodes = Math.Max(maxGeodes, geodes + (remaining - 1));
-                builtRobot = true;
+            if (!canBuild)
+            {
+                return Option.None<GameState>();
             }
 
-            int potentialGeodes = (remaining - 1) / 2 * remaining;
-            //int potentialGeodes = maxGeodes + (remaining - 1) * state.GeodeRobots;
+            // we should and could build this robot, so work out the earliest point at which we could build it
+            (int Ore, int Clay, int Obsidian) costs = Costs(blueprint, type);
 
-            if (potentialGeodes < maxGeodes)
-            {
-                // this branch can't win
-                cache[key] = maxGeodes;
-                return maxGeodes;
-            }
+            int oreMinutesRequired = (state.Ore >= costs.Ore) ? 0 : (costs.Ore - state.Ore + state.OreRobots - 1) / state.OreRobots;
+            int clayMinutesRequired = (state.Clay >= costs.Clay) ? 0 : (costs.Clay - state.Clay + state.ClayRobots - 1) / state.ClayRobots;
+            int obsidianMinutesRequired = (state.Obsidian >= costs.Obsidian) ? 0 : (costs.Obsidian - state.Obsidian + state.ObsidianRobots - 1) / state.ObsidianRobots;
 
-            if (state.Ore >= blueprint.OreRobotCost)
-            {
-                // try to build an ore robot
-                geodes = Optimise(blueprint,
-                                  remaining - 1,
-                                  next with
-                                  {
-                                      Ore = next.Ore - blueprint.OreRobotCost,
-                                      OreRobots = next.OreRobots + 1
-                                  },
-                                  cache);
+            // +1 because the robot takes 1 minute to build after starting
+            int minutesRequired = Math.Max(Math.Max(oreMinutesRequired, clayMinutesRequired), obsidianMinutesRequired) + 1;
 
-                maxGeodes = Math.Max(maxGeodes, geodes);
-                builtRobot = true;
-            }
+            // fast forward by the appropriate amount of time to start building
+            int nextOre = state.Ore + (minutesRequired * state.OreRobots) - costs.Ore;
+            int nextClay = state.Clay + (minutesRequired * state.ClayRobots) - costs.Clay;
+            int nextObsidian = state.Obsidian + (minutesRequired * state.ObsidianRobots) - costs.Obsidian;
+            int nextGeodes = state.Geodes + (minutesRequired * state.GeodeRobots);
 
-            if (state.Ore >= blueprint.ClayRobotCost)
-            {
-                // try to build a clay robot
-                geodes = Optimise(blueprint,
-                                  remaining - 1,
-                                  next with
-                                  {
-                                      Ore = next.Ore - blueprint.ClayRobotCost,
-                                      ClayRobots = next.ClayRobots + 1
-                                  },
-                                  cache);
+            int nextOreRobots = type == RobotType.Ore ? state.OreRobots + 1 : state.OreRobots;
+            int nextClayRobots = type == RobotType.Clay ? state.ClayRobots + 1 : state.ClayRobots;
+            int nextObsidianRobots = type == RobotType.Obsidian ? state.ObsidianRobots + 1 : state.ObsidianRobots;
+            int nextGeodeRobots = type == RobotType.Geode ? state.GeodeRobots + 1 : state.GeodeRobots;
 
-                maxGeodes = Math.Max(maxGeodes, geodes);
-                builtRobot = true;
-            }
+            GameState next = new(state.Remaining - minutesRequired,
+                                 nextOreRobots,
+                                 nextOre,
+                                 nextClayRobots,
+                                 nextClay,
+                                 nextObsidianRobots,
+                                 nextObsidian,
+                                 nextGeodeRobots,
+                                 nextGeodes);
 
-            if (state.Clay >= blueprint.ObsidianRobotClayCost && state.Ore >= blueprint.ObsidianRobotOreCost)
-            {
-                // try to build an obsidian robot
-                geodes = Optimise(blueprint,
-                                  remaining - 1,
-                                  next with
-                                  {
-                                      Ore = next.Ore - blueprint.ObsidianRobotOreCost,
-                                      Clay = next.Clay - blueprint.ObsidianRobotClayCost,
-                                      ObsidianRobots = next.ObsidianRobots + 1
-                                  },
-                                  cache);
-
-                maxGeodes = Math.Max(maxGeodes, geodes);
-                builtRobot = true;
-            }
-
-            // if we didn't build anything this round, just continue without building
-            //if (!builtRobot)
-            //{
-                geodes = Optimise(blueprint, remaining - 1, next, cache);
-                maxGeodes = Math.Max(maxGeodes, geodes);
-            //}
-
-            cache[key] = maxGeodes;
-            return maxGeodes;
+            return next.Some();
         }
+
+        /// <summary>
+        /// Get the costs of the given robot type
+        /// </summary>
+        /// <param name="blueprint">Blueprint of costs</param>
+        /// <param name="type">Robot type to build</param>
+        /// <returns>Costs to build the robot</returns>
+        private static (int Ore, int Clay, int Obsidian) Costs(Blueprint blueprint, RobotType type) => type switch
+        {
+            RobotType.Ore => (blueprint.OreRobotCost, 0, 0),
+            RobotType.Clay => (blueprint.ClayRobotCost, 0, 0),
+            RobotType.Obsidian => (blueprint.ObsidianRobotOreCost, blueprint.ObsidianRobotClayCost, 0),
+            RobotType.Geode => (blueprint.GeodeRobotOreCost, 0, blueprint.GeodeRobotObsidianCost),
+            _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+        };
 
         // Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 4 ore. Each obsidian robot costs 4 ore and 14 clay. Each geode robot costs 3 ore and 16 obsidian.
         private readonly record struct Blueprint(int Id,
@@ -186,24 +204,22 @@ namespace AdventOfCode
                                                  int GeodeRobotObsidianCost,
                                                  int MaxOreCost);
 
-        private readonly record struct GameState(int OreRobots,
+        private readonly record struct GameState(int Remaining,
+                                                 int OreRobots,
                                                  int Ore,
                                                  int ClayRobots,
                                                  int Clay,
                                                  int ObsidianRobots,
                                                  int Obsidian,
-                                                 int GeodeRobots);
-        /*
-        [Flags]
-        private enum AvailableRobots
-        {
-            None = 0,
-            Ore = 1,
-            Clay = 2,
-            Obsidian = 4,
-            Geode = 8,
+                                                 int GeodeRobots,
+                                                 int Geodes);
 
-            All = Ore | Clay | Obsidian | Geode
-        }*/
+        private enum RobotType
+        {
+            Ore,
+            Clay,
+            Obsidian,
+            Geode
+        }
     }
 }
