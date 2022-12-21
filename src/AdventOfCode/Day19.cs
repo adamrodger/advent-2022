@@ -10,6 +10,8 @@ namespace AdventOfCode
     /// </summary>
     public class Day19
     {
+        private static readonly RobotType[] RobotTypes = { RobotType.Geode, RobotType.Obsidian, RobotType.Clay, RobotType.Ore };
+
         public int Part1(string[] input)
         {
             int total = 0;
@@ -81,7 +83,7 @@ namespace AdventOfCode
 
                 if (state.Remaining > 1)
                 {
-                    foreach (RobotType type in Enum.GetValues<RobotType>())
+                    foreach (RobotType type in RobotTypes)
                     {
                         TryBuild(state, blueprint, type).MatchSome(next =>
                         {
