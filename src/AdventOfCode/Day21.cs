@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using Optional;
+using Optional.Unsafe;
 
 namespace AdventOfCode
 {
@@ -9,27 +10,55 @@ namespace AdventOfCode
     /// </summary>
     public class Day21
     {
+        private const string Root = "root";
+        private const string Human = "humn";
+
         public long Part1(string[] input)
         {
-            Dictionary<string, long> numbers = new();
-            Dictionary<string, (string Left, string Right, Operation Operation)> operations = new();
+            (IDictionary<string, long> resolved, IDictionary<string, Calculation> operations) = ParseInput(input);
+            return Calculate(Root, resolved, operations).ValueOrFailure();
+        }
+
+        public long Part2(string[] input)
+        {
+            (IDictionary<string, long> resolved, IDictionary<string, Calculation> operations) = ParseInput(input);
+
+            // we don't know the value of human
+            resolved.Remove(Human);
+
+            // resolve as many of the numbers as we can, where one will fail because it needs humn and we've removed it
+            Calculation root = operations[Root];
+            Calculate(Root, resolved, operations);
+
+            return resolved.ContainsKey(root.Left)
+                       ? Find(root.Right, resolved[root.Left], resolved, operations)
+                       : Find(root.Left, resolved[root.Right], resolved, operations);
+        }
+
+        /// <summary>
+        /// Parse the input to a lookup of resolved numbers and calculations to perform
+        /// </summary>
+        /// <param name="input">Input</param>
+        /// <returns>Parsed input</returns>
+        private static (IDictionary<string, long> Resolved, IDictionary<string, Calculation> Operations) ParseInput(string[] input)
+        {
+            Dictionary<string, long> resolved = new();
+            Dictionary<string, Calculation> operations = new();
 
             foreach (string line in input)
             {
                 // gjfs: wjcw + gdfb
                 // sbwg: 3
-
                 string[] parts = line.Split(' ');
-
                 string id = parts[0][..^1];
 
                 if (parts.Length == 2)
                 {
-                    numbers[id] = long.Parse(parts[1]);
+                    resolved[id] = long.Parse(parts[1]);
                 }
                 else
                 {
-                    operations[id] = (parts[1], parts[3], parts[2] switch
+                    operations[id] = new Calculation(parts[1], parts[3], parts[2] switch
                     {
                         "+" => Operation.Add,
                         "-" => Operation.Subtract,
@@ -40,94 +69,34 @@ namespace AdventOfCode
                 }
             }
 
-            return Resolve("root", numbers, operations);
-        }
-
-        public long Part2(string[] input)
-        {
-            Dictionary<string, long> numbers = new();
-            Dictionary<string, (string Left, string Right, Operation Operation)> operations = new();
-
-            foreach (string line in input)
-            {
-                // gjfs: wjcw + gdfb
-                // sbwg: 3
-
-                string[] parts = line.Split(' ');
-
-                string id = parts[0][..^1];
-
-                if (parts.Length == 2)
-                {
-                    numbers[id] = long.Parse(parts[1]);
-                }
-                else
-                {
-                    operations[id] = (parts[1], parts[3], parts[2] switch
-                                         {
-                                             "+" => Operation.Add,
-                                             "-" => Operation.Subtract,
-                                             "*" => Operation.Multiply,
-                                             "/" => Operation.Divide,
-                                             _ => throw new ArgumentOutOfRangeException()
-                                         });
-                }
-            }
-
-            numbers.Remove("humn");
-
-            var root = operations["root"];
-
-            // resolve as many of the numbers as we can, where one will fail because it needs humn and we've removed it
-            IDictionary<string, long> partiallySolved = new Dictionary<string, long>(numbers);
-
-            long leftValue = Resolve(root.Left, partiallySolved, operations);
-            long rightValue = Resolve(root.Right, partiallySolved, operations);
-
-            return leftValue < 1
-                       ? Find(root.Left, rightValue, partiallySolved, operations)
-                       : Find(root.Right, leftValue, partiallySolved, operations);
+            return (resolved, operations);
         }
 
         /// <summary>
-        /// Resolve all operations from the given node downwards
+        /// Calculate all operations from the given node downwards which can be solved
         /// </summary>
         /// <param name="id">Current node</param>
-        /// <param name="numbers">Already resolved nodes</param>
+        /// <param name="resolved">Already resolved nodes</param>
         /// <param name="operations">Operations lookup</param>
-        /// <returns>Value of the given node after resolving</returns>
-        private static long Resolve(string id, IDictionary<string, long> numbers, IDictionary<string, (string Left, string Right, Operation Operation)> operations)
+        /// <returns>Value of the given node after calculating, or none if it can't be calculated currently</returns>
+        private static Option<long> Calculate(string id, IDictionary<string, long> resolved, IDictionary<string, Calculation> operations)
         {
-            if (numbers.TryGetValue(id, out long value))
+            if (resolved.TryGetValue(id, out long value))
             {
-                return value;
+                return value.Some();
+            }
+
+            if (!operations.ContainsKey(id))
+            {
+                return Option.None<long>();
             }
 
             (string leftId, string rightId, Operation operation) = operations[id];
 
-            long left = -1;
-            long right = -1;
+            Option<long> maybeLeft = Calculate(leftId, resolved, operations);
+            Option<long> maybeRight = Calculate(rightId, resolved, operations);
 
-            try
-            {
-                left = Resolve(leftId, numbers, operations);
-            }
-            catch (KeyNotFoundException)
-            {
-                // for part 2, one path will be unresolvable so we'll get this problem
-                Debugger.Break();
-            }
-
-            try
-            {
-                right = Resolve(rightId, numbers, operations);
-            }
-            catch (KeyNotFoundException)
-            {
-                Debugger.Break();
-            }
-
-            if (left > 0 && right > 0)
+            return maybeLeft.FlatMap(left => maybeRight.Map(right =>
             {
                 long result = operation switch
                 {
@@ -138,12 +107,10 @@ namespace AdventOfCode
                     _ => throw new ArgumentOutOfRangeException()
                 };
 
-                numbers[id] = result;
+                resolved[id] = result;
 
                 return result;
-            }
-
-            return -1;
+            }));
         }
 
         /// <summary>
@@ -154,12 +121,9 @@ namespace AdventOfCode
         /// <param name="resolved">Already resolved nodes</param>
         /// <param name="operations">Operations lookup</param>
         /// <returns>Value for this node</returns>
-        private static long Find(string id,
-                                 long target,
-                                 IDictionary<string, long> resolved,
-                                 IDictionary<string, (string Left, string Right, Operation Operation)> operations)
+        private static long Find(string id, long target, IDictionary<string, long> resolved, IDictionary<string, Calculation> operations)
         {
-            if (id == "humn")
+            if (id == Human)
             {
                 return target;
             }
@@ -206,6 +170,8 @@ namespace AdventOfCode
                 return left;
             }
         }
+
+        private readonly record struct Calculation(string Left, string Right, Operation Operation);
 
         private enum Operation
         {
