@@ -118,7 +118,7 @@ namespace AdventOfCode
             {
                 RobotType.Ore => state.OreRobots < blueprint.MaxOreCost,
                 RobotType.Clay => state.ClayRobots < blueprint.ObsidianRobotClayCost,
-                RobotType.Obsidian => state.Obsidian < blueprint.GeodeRobotObsidianCost,
+                RobotType.Obsidian => state.ObsidianRobots < blueprint.GeodeRobotObsidianCost,
                 RobotType.Geode => true,
                 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
