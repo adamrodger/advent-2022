@@ -24,37 +24,6 @@ namespace AdventOfCode.Tests
             return input;
         }
 
-        private static string[] GetSampleInput()
-        {
-            return new string[]
-            {
-                "        ...#    ",
-                "        .#..    ",
-                "        #...    ",
-                "        ....    ",
-                "...#.......#    ",
-                "........#...    ",
-                "..#....#....    ",
-                "..........#.    ",
-                "        ...#....",
-                "        .....#..",
-                "        .#......",
-                "        ......#.",
-                "",
-                "10R5L5R10L4R5L5",
-            };
-        }
-
-        [Fact]
-        public void Part1_SampleInput_ProducesCorrectResponse()
-        {
-            var expected = 6032;
-
-            var result = solver.Part1(GetSampleInput());
-
-            Assert.Equal(expected, result);
-        }
-
         [Fact]
         public void Part1_RealInput_ProducesCorrectResponse()
         {
@@ -67,19 +36,9 @@ namespace AdventOfCode.Tests
         }
 
         [Fact]
-        public void Part2_SampleInput_ProducesCorrectResponse()
-        {
-            var expected = -1;
-
-            var result = solver.Part2(GetSampleInput());
-
-            Assert.Equal(expected, result);
-        }
-
-        [Fact]
         public void Part2_RealInput_ProducesCorrectResponse()
         {
-            var expected = -1;
+            var expected = 197047;
 
             var result = solver.Part2(GetRealInput());
             output.WriteLine($"Day 22 - Part 2 - {result}");
@@ -94,11 +53,15 @@ namespace AdventOfCode.Tests
         [InlineData("top/north -> back/left/east", 92, 0, Bearing.North, 0, 192, Bearing.East)]
         [InlineData("top/south -> front/top/south", 92, 49, Bearing.South, 92, 50, Bearing.South)]
         [InlineData("top/east -> right/left/east", 99, 42, Bearing.East, 100, 42, Bearing.East)]
-        [InlineData("top/west -> left/left/east", 50, 42, Bearing.West, 0, 142, Bearing.East)]
+        [InlineData("top/west -> left/left/east", 50, 42, Bearing.West, 0, 107, Bearing.East)]
+        [InlineData("top/west/cornertop -> left/left/east", 50, 0, Bearing.West, 0, 149, Bearing.East)]
+        [InlineData("top/west/cornerbottom -> left/left/east", 50, 49, Bearing.West, 0, 100, Bearing.East)]
 
         [InlineData("right/north -> back/bottom/north", 142, 0, Bearing.North, 42, 199, Bearing.North)]
         [InlineData("right/south -> front/right/west", 142, 49, Bearing.South, 99, 92, Bearing.West)]
-        [InlineData("right/east -> bottom/right/west", 149, 42, Bearing.East, 99, 108, Bearing.West)]
+        [InlineData("right/east -> bottom/right/west", 149, 42, Bearing.East, 99, 107, Bearing.West)]
+        [InlineData("right/east/cornertop -> bottom/right/west", 149, 0, Bearing.East, 99, 149, Bearing.West)]
+        [InlineData("right/east/cornerbottom -> bottom/right/west", 149, 49, Bearing.East, 99, 100, Bearing.West)]
         [InlineData("right/west -> top/right/west", 100, 42, Bearing.West, 99, 42, Bearing.West)]
             
         [InlineData("front/north -> top/bottom/north", 92, 50, Bearing.North, 92, 49, Bearing.North)]
@@ -109,11 +72,15 @@ namespace AdventOfCode.Tests
         [InlineData("left/north -> front/left/east", 42, 100, Bearing.North, 50, 92, Bearing.East)]
         [InlineData("left/south -> back/top/south", 42, 149, Bearing.South, 42, 150, Bearing.South)]
         [InlineData("left/east -> bottom/left/east", 49, 142, Bearing.East, 50, 142, Bearing.East)]
-        [InlineData("left/west -> top/left/east", 0, 142, Bearing.West, 50, 8, Bearing.East)]
+        [InlineData("left/west -> top/left/east", 0, 142, Bearing.West, 50, 7, Bearing.East)]
+        [InlineData("left/west/cornertop -> top/left/east", 0, 100, Bearing.West, 50, 49, Bearing.East)]
+        [InlineData("left/west/cornerbottom -> top/left/east", 0, 149, Bearing.West, 50, 0, Bearing.East)]
 
         [InlineData("bottom/north -> front/bottom/north", 92, 100, Bearing.North, 92, 99, Bearing.North)]
         [InlineData("bottom/south -> back/right/west", 92, 149, Bearing.South, 49, 192, Bearing.West)] 
-        [InlineData("bottom/east -> right/right/west", 99, 142, Bearing.East, 149, 8, Bearing.West)]
+        [InlineData("bottom/east -> right/right/west", 99, 142, Bearing.East, 149, 7, Bearing.West)]
+        [InlineData("bottom/east/cornertop -> right/right/west", 99, 100, Bearing.East, 149, 49, Bearing.West)]
+        [InlineData("bottom/east/cornerbottom -> right/right/west", 99, 149, Bearing.East, 149, 0, Bearing.West)]
         [InlineData("bottom/west -> left/right/west", 50, 142, Bearing.West, 49, 142, Bearing.West)]
 
         [InlineData("back/north -> left/bottom/north", 42, 150, Bearing.North, 42, 149, Bearing.North)]

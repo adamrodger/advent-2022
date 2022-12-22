@@ -100,10 +100,13 @@ namespace AdventOfCode
                     {
                         break;
                     }
+                    else
+                    {
+                        throw new InvalidOperationException("Tried to step off the cube");
+                    }
                 }
             }
-
-            // 12501 -- too low
+            
             return CalculateScore(bearing, location);
         }
 
@@ -197,11 +200,11 @@ namespace AdventOfCode
                         case Bearing.North: // back, left edge, heading east
                             return ((0, current.X + 100), Bearing.East);
                         case Bearing.South: // front, top edge, heading south
-                            return ((current.X, 50), bearing);
+                            return (next, bearing);
                         case Bearing.East: // right, left edge, heading east
                             return (next, bearing);
                         case Bearing.West: // left, left edge, heading east
-                            return ((0, current.Y + 100), Bearing.East);
+                            return ((0, (50 - current.Y) + 99), Bearing.East);
                     }
                     break;
                 case (0, 2): // right
@@ -212,7 +215,7 @@ namespace AdventOfCode
                         case Bearing.South: // front, right edge, heading west
                             return ((99, current.X - 50), Bearing.West);
                         case Bearing.East: // bottom, right edge, heading west
-                            return ((99, (50 - current.Y) + 100), Bearing.West);
+                            return ((99, (50 - current.Y) + 99), Bearing.West);
                         case Bearing.West: // top, right edge, heading west
                             return (next, bearing);
                     }
@@ -240,7 +243,7 @@ namespace AdventOfCode
                         case Bearing.East: // bottom, left edge, heading east
                             return (next, bearing);
                         case Bearing.West: // top, left edge, heading east
-                            return ((50, 50 - current.Y + 100), Bearing.East);
+                            return ((50, 50 - current.Y + 99), Bearing.East);
                     }
                     break;
                 case (2, 1): // bottom
@@ -251,9 +254,9 @@ namespace AdventOfCode
                         case Bearing.South: // back, right edge, heading west
                             return ((49, current.X + 100), Bearing.West);
                         case Bearing.East: // right, right edge, heading west
-                            return ((149, (50 - current.Y) + 100), Bearing.West);
+                            return ((149, (50 - current.Y) + 99), Bearing.West);
                         case Bearing.West: // left, right edge, heading west
-                            return ((49, current.Y), Bearing.West);
+                            return (next, bearing);
                     }
                     break;
                 case (3, 0): // back
@@ -273,7 +276,7 @@ namespace AdventOfCode
                     throw new InvalidOperationException($"There is no face on row {currentRow} and column {currentColumn}");
             }
 
-            throw new NotImplementedException();
+            throw new ArgumentOutOfRangeException(nameof(bearing), bearing, "Tried to make a weird move on an existing face");
         }
 
         /// <summary>
@@ -293,8 +296,6 @@ namespace AdventOfCode
                 _ => throw new ArgumentOutOfRangeException()
             };
 
-            // 45400 -- too low
-            // 139370 -- too low
             return (location.Y + 1) * 1000 + (location.X + 1) * 4 + bearingValue;
         }
 
