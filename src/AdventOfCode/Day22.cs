@@ -17,7 +17,7 @@ namespace AdventOfCode
         {
             char[,] grid = input[..^2].ToGrid();
 
-            IList<Instruction> instructions = Parse(input[^1]);
+            IEnumerable<Instruction> instructions = Parse(input[^1]);
 
             Point2D location = (input[0].IndexOf(Open), 0);
             Bearing bearing = Bearing.East;
@@ -71,7 +71,7 @@ namespace AdventOfCode
         {
             char[,] grid = input[..^2].ToGrid();
 
-            IList<Instruction> instructions = Parse(input[^1]);
+            IEnumerable<Instruction> instructions = Parse(input[^1]);
 
             Point2D location = (input[0].IndexOf(Open), 0);
             Bearing bearing = Bearing.East;
@@ -106,7 +106,7 @@ namespace AdventOfCode
                     }
                 }
             }
-            
+
             return CalculateScore(bearing, location);
         }
 
@@ -115,10 +115,8 @@ namespace AdventOfCode
         /// </summary>
         /// <param name="input">Input</param>
         /// <returns>A list of parsed instructions</returns>
-        private static IList<Instruction> Parse(string input)
+        private static IEnumerable<Instruction> Parse(string input)
         {
-            var instructions = new List<Instruction>();
-
             for (int i = 0; i < input.Length; i++)
             {
                 if (!char.IsAsciiDigit(input[i]))
@@ -130,7 +128,7 @@ namespace AdventOfCode
                         _ => throw new ArgumentOutOfRangeException()
                     };
 
-                    instructions.Add(new Turn(direction));
+                    yield return new Turn(direction);
                 }
                 else
                 {
@@ -142,13 +140,11 @@ namespace AdventOfCode
                     }
 
                     int steps = int.Parse(input.Substring(i, length));
-                    instructions.Add(new Step(steps));
+                    yield return new Step(steps);
 
                     i += length - 1;
                 }
             }
-
-            return instructions;
         }
 
         /// <summary>
@@ -187,94 +183,35 @@ namespace AdventOfCode
             }
 
             // we've fallen off a face, so we need to work out which face we end up on and which direction we're now facing
-            (int Column, int Row) currentFace = (current.Y / 50, current.X / 50);
-
-            // unreachable states are commented out because they will always return next as a valid move, but shown for completeness
-            switch (currentFace)
+            Face face = (current.Y / 50, current.X / 50) switch
             {
-                case (0, 1): // top
-                    switch (bearing)
-                    {
-                        case Bearing.North: // back, left edge, heading east
-                            return ((0, current.X + 100), Bearing.East);
-                        //case Bearing.South: // front, top edge, heading south
-                        //    return (next, bearing);
-                        //case Bearing.East: // right, left edge, heading east
-                        //    return (next, bearing);
-                        case Bearing.West: // left, left edge, heading east
-                            return ((0, 149 - current.Y), Bearing.East);
-                    }
-                    break;
-                case (0, 2): // right
-                    switch (bearing)
-                    {
-                        case Bearing.North: // back, bottom edge, heading north
-                            return ((current.X - 100, 199), Bearing.North);
-                        case Bearing.South: // front, right edge, heading west
-                            return ((99, current.X - 50), Bearing.West);
-                        case Bearing.East: // bottom, right edge, heading west
-                            return ((99, 149 - current.Y), Bearing.West);
-                        //case Bearing.West: // top, right edge, heading west
-                        //    return (next, bearing);
-                    }
-                    break;
-                case (1, 1): // front
-                    switch (bearing)
-                    {
-                        //case Bearing.North: // top, bottom edge, heading north
-                        //    return (next, bearing);
-                        //case Bearing.South: // bottom, top edge, heading south
-                        //    return (next, bearing);
-                        case Bearing.East: // right, bottom edge, heading north
-                            return ((current.Y + 50, 49), Bearing.North);
-                        case Bearing.West: // left, top edge, heading south
-                            return ((current.Y - 50, 100), Bearing.South);
-                    }
-                    break;
-                case (2, 0): // left
-                    switch (bearing)
-                    {
-                        case Bearing.North: // front, left edge, heading east
-                            return ((50, current.X + 50), Bearing.East);
-                        //case Bearing.South: // back, top edge, heading south
-                        //    return (next, bearing);
-                        //case Bearing.East: // bottom, left edge, heading east
-                        //    return (next, bearing);
-                        case Bearing.West: // top, left edge, heading east
-                            return ((50, 149 - current.Y), Bearing.East);
-                    }
-                    break;
-                case (2, 1): // bottom
-                    switch (bearing)
-                    {
-                        //case Bearing.North: // front, bottom edge, heading north
-                        //    return (next, bearing);
-                        case Bearing.South: // back, right edge, heading west
-                            return ((49, current.X + 100), Bearing.West);
-                        case Bearing.East: // right, right edge, heading west
-                            return ((149, 149 - current.Y), Bearing.West);
-                        //case Bearing.West: // left, right edge, heading west
-                        //    return (next, bearing);
-                    }
-                    break;
-                case (3, 0): // back
-                    switch (bearing)
-                    {
-                        //case Bearing.North: // left, bottom edge, heading north
-                        //    return (next, bearing);
-                        case Bearing.South: // right, top edge, heading south
-                            return ((current.X + 100, 0), bearing);
-                        case Bearing.East: // bottom, bottom edge, heading north
-                            return ((current.Y - 100, 149), Bearing.North);
-                        case Bearing.West: // top, top edge, heading south
-                            return ((current.Y - 100, 0), Bearing.South);
-                    }
-                    break;
-                default:
-                    throw new InvalidOperationException($"There is no face on row {currentFace.Row} and column {currentFace.Column}");
-            }
+                (0, 1) => Face.Top,
+                (0, 2) => Face.Right,
+                (1, 1) => Face.Front,
+                (2, 0) => Face.Left,
+                (2, 1) => Face.Bottom,
+                (3, 0) => Face.Back,
+                _ => throw new ArgumentOutOfRangeException()
+            };
 
-            throw new ArgumentOutOfRangeException(nameof(bearing), bearing, $"Tried to make a weird move from {current}");
+            return (face, bearing) switch
+            {
+                (Face.Top, Bearing.North) => ((0, current.X + 100), Bearing.East),      // back, left edge, heading east
+                (Face.Top, Bearing.West) => ((0, 149 - current.Y), Bearing.East),       // left, left edge, heading east
+                (Face.Right, Bearing.North) => ((current.X - 100, 199), Bearing.North), // back, bottom edge, heading north
+                (Face.Right, Bearing.South) => ((99, current.X - 50), Bearing.West),    // front, right edge, heading west
+                (Face.Right, Bearing.East) => ((99, 149 - current.Y), Bearing.West),    // bottom, right edge, heading west
+                (Face.Front, Bearing.East) => ((current.Y + 50, 49), Bearing.North),    // right, bottom edge, heading north
+                (Face.Front, Bearing.West) => ((current.Y - 50, 100), Bearing.South),   // left, top edge, heading south
+                (Face.Left, Bearing.North) => ((50, current.X + 50), Bearing.East),     // front, left edge, heading east
+                (Face.Left, Bearing.West) => ((50, 149 - current.Y), Bearing.East),     // top, left edge, heading east
+                (Face.Bottom, Bearing.South) => ((49, current.X + 100), Bearing.West),  // back, right edge, heading west
+                (Face.Bottom, Bearing.East) => ((149, 149 - current.Y), Bearing.West),  // right, right edge, heading west
+                (Face.Back, Bearing.South) => ((current.X + 100, 0), bearing),          // right, top edge, heading south
+                (Face.Back, Bearing.East) => ((current.Y - 100, 149), Bearing.North),   // bottom, bottom edge, heading north
+                (Face.Back, Bearing.West) => ((current.Y - 100, 0), Bearing.South),     // top, top edge, heading south
+                _ => throw new ArgumentOutOfRangeException($"Face {face} doesn't need to jump on bearing {bearing}")
+            };
         }
 
         /// <summary>
@@ -302,5 +239,15 @@ namespace AdventOfCode
         private record Step(int Count) : Instruction;
 
         private record Turn(TurnDirection Direction) : Instruction;
+
+        private enum Face
+        {
+            Top,
+            Front,
+            Bottom,
+            Back,
+            Left,
+            Right
+        }
     }
 }
