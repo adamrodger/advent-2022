@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using AdventOfCode.Utilities;
 using Optional;
 using Optional.Unsafe;
@@ -32,16 +30,10 @@ namespace AdventOfCode
                 }
             }
 
-            Debug.WriteLine("--- Start ---");
-            Print(positions);
-
             // simulate the elves moving around
             for (int i = 0; i < 10; i++)
             {
-                positions = Tick(i, positions);
-
-                Debug.WriteLine($"--- After Round {i} ---");
-                Print(positions);
+                (_, positions) = Tick(i, positions);
             }
 
             // find the minimum bounding box
@@ -69,24 +61,44 @@ namespace AdventOfCode
                     }
                 }
             }
-
-            // 4550 -- too high
-            // 3448 -- too low
+            
             return emptySpaces;
         }
 
         public int Part2(string[] input)
         {
-            foreach (string line in input)
+            // get the initial starting positions
+            ISet<Point2D> positions = new HashSet<Point2D>();
+
+            for (int y = 0; y < input.Length; y++)
             {
-                throw new NotImplementedException("Part 2 not implemented");
+                string line = input[y];
+
+                for (int x = 0; x < line.Length; x++)
+                {
+                    if (line[x] == '#')
+                    {
+                        positions.Add(new Point2D(x, y));
+                    }
+                }
             }
 
-            return 0;
+            int round = 0;
+
+            while (true)
+            {
+                (bool moved, positions) = Tick(round++, positions);
+
+                if (!moved)
+                {
+                    return round;
+                }
+            }
         }
 
-        private static ISet<Point2D> Tick(int round, ISet<Point2D> current)
+        private static (bool Moved, ISet<Point2D> Positions) Tick(int round, ISet<Point2D> current)
         {
+            bool moved = false;
             var proposals = new Dictionary<Point2D, Point2D>();
             var proposalCounts = new Dictionary<Point2D, int>();
 
@@ -115,6 +127,7 @@ namespace AdventOfCode
                         Point2D proposedMove = tryMove.ValueOrFailure();
                         proposals[elf] = proposedMove;
                         proposalCounts[proposedMove] = proposalCounts.GetOrCreate(proposedMove) + 1;
+                        moved = true;
                         break;
                     }
                 }
@@ -145,7 +158,7 @@ namespace AdventOfCode
                 }
             }
 
-            return next;
+            return (moved, next);
         }
 
         private static Option<Point2D> NextMove(Point2D elf, IList<(Point2D Location, CompassFlags Bearing)> occupied, int round)
@@ -182,34 +195,6 @@ namespace AdventOfCode
             }
 
             return Option.None<Point2D>();
-        }
-
-        private static void Print(ISet<Point2D> positions)
-        {
-            int minX = int.MaxValue, maxX = int.MinValue;
-            int minY = int.MaxValue, maxY = int.MinValue;
-
-            foreach (Point2D elf in positions)
-            {
-                minX = Math.Min(minX, elf.X);
-                maxX = Math.Max(maxX, elf.X);
-                minY = Math.Min(minY, elf.Y);
-                maxY = Math.Max(maxY, elf.Y);
-            }
-
-            StringBuilder builder = new();
-
-            for (int y = minY; y <= maxY; y++)
-            {
-                for (int x = minX; x <= maxX; x++)
-                {
-                    builder.Append(positions.Contains(new Point2D(x, y)) ? '#' : '.');
-                }
-
-                builder.AppendLine();
-            }
-
-            Debug.WriteLine(builder.ToString());
         }
 
         private static readonly CompassFlags[] AllDirections =
