@@ -19,8 +19,11 @@ namespace AdventOfCode
         private const int South = 6;
         private const int SouthEast = 7;
 
-        // go to the shadow realm
-        private static readonly Point2D NoMove = new(int.MinValue, int.MinValue);
+        private static readonly Point2D MoveNorth = new(0, -1);
+        private static readonly Point2D MoveSouth = new(0, 1);
+        private static readonly Point2D MoveWest = new(-1, 0);
+        private static readonly Point2D MoveEast = new(1, 0);
+        private static readonly Point2D NoMove = new(0, 0);
 
         public int Part1(string[] input)
         {
@@ -103,33 +106,35 @@ namespace AdventOfCode
         /// <returns>Whether any elf moved from the start positions</returns>
         private static bool Tick(int round, ISet<Point2D> current)
         {
-            bool moved = false;
-            var proposals = new Dictionary<Point2D, Point2D>(current.Count);
-            var proposalCounts = new Dictionary<Point2D, int>(current.Count);
-
-            // first part - each elf proposes a move
-            foreach (Point2D elf in current)
+            var previous = new HashSet<Point2D>(current);
+            current.Clear();
+            
+            int moves = 0;
+            
+            foreach (Point2D elf in previous)
             {
-                if (TryMove(elf, current, round, out Point2D proposedMove))
+                Point2D delta = NextMove(elf, previous, round);
+                Point2D nextMove = elf + delta;
+
+                if (nextMove != elf)
                 {
-                    // elf wants to move, so proposes the move
-                    proposals[elf] = proposedMove;
-                    proposalCounts[proposedMove] = proposalCounts.GetOrCreate(proposedMove) + 1;
-                    moved = true;
+                    moves++;
+                }
+
+                if (!current.Add(nextMove))
+                {
+                    // uh-oh, another elf already proposed that. Cancel the other elf's move
+                    current.Remove(nextMove);
+
+                    // put both elves back in their original position
+                    current.Add(elf);
+                    current.Add(nextMove + delta);
+
+                    moves -= 2;
                 }
             }
 
-            // second part - elves which proposed unique positions will move there, otherwise they stay still
-            foreach ((Point2D elf, Point2D proposedMove) in proposals)
-            {
-                if (proposalCounts[proposedMove] == 1)
-                {
-                    current.Remove(elf);
-                    current.Add(proposedMove);
-                }
-            }
-
-            return moved;
+            return moves > 0;
         }
 
         /// <summary>
@@ -138,9 +143,8 @@ namespace AdventOfCode
         /// <param name="elf">Elf to move</param>
         /// <param name="positions">Current elf positions</param>
         /// <param name="round">Round + move identifier</param>
-        /// <param name="move">Proposed move, if a move is possible</param>
         /// <returns>The next move if that move is valid, otherwise None</returns>
-        private static bool TryMove(Point2D elf, ISet<Point2D> positions, int round, out Point2D move)
+        private static Point2D NextMove(Point2D elf, ISet<Point2D> positions, int round)
         {
             bool[] adjacent =
             {
@@ -152,8 +156,7 @@ namespace AdventOfCode
             if (!adjacent.Any(x => x))
             {
                 // don't move if there are no adjacent elves
-                move = NoMove;
-                return false;
+                return NoMove;
             }
 
             for (int i = 0; i < 4; i++)
@@ -163,32 +166,28 @@ namespace AdventOfCode
                     case 0:
                         if (!adjacent[NorthWest] && !adjacent[North] && !adjacent[NorthEast])
                         {
-                            move = elf with { Y = elf.Y - 1 };
-                            return true;
+                            return MoveNorth;
                         }
 
                         break;
                     case 1:
                         if (!adjacent[SouthWest] && !adjacent[South] && !adjacent[SouthEast])
                         {
-                            move = elf with { Y = elf.Y + 1 };
-                            return true;
+                            return MoveSouth;
                         }
 
                         break;
                     case 2:
                         if (!adjacent[NorthWest] && !adjacent[West] && !adjacent[SouthWest])
                         {
-                            move = elf with { X = elf.X - 1 };
-                            return true;
+                            return MoveWest;
                         }
 
                         break;
                     case 3:
                         if (!adjacent[NorthEast] && !adjacent[East] && !adjacent[SouthEast])
                         {
-                            move = elf with { X = elf.X + 1 };
-                            return true;
+                            return MoveEast;
                         }
 
                         break;
@@ -196,8 +195,7 @@ namespace AdventOfCode
             }
 
             // no valid move
-            move = NoMove;
-            return false;
+            return NoMove;
         }
     }
 }
