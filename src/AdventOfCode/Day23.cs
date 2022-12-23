@@ -48,19 +48,7 @@ namespace AdventOfCode
             }
 
             // find the empty spaces in the box
-            int emptySpaces = 0;
-
-            for (int y = minY; y <= maxY; y++)
-            {
-                for (int x = minX; x <= maxX; x++)
-                {
-                    if (!positions.Contains(new Point2D(x, y)))
-                    {
-                        emptySpaces++;
-                    }
-                }
-            }
-            
+            int emptySpaces = ((maxX - minX + 1) * (maxY - minY + 1)) - positions.Count;
             return emptySpaces;
         }
 
