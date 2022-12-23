@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using AdventOfCode.Utilities;
 using Optional;
-using Optional.Unsafe;
 
 namespace AdventOfCode
 {
@@ -83,6 +82,7 @@ namespace AdventOfCode
                 }
             }
 
+            // keep going until no elf moves
             int round = 0;
 
             while (true)
@@ -96,11 +96,17 @@ namespace AdventOfCode
             }
         }
 
+        /// <summary>
+        /// Perform one full round of the simulation
+        /// </summary>
+        /// <param name="round">Round number</param>
+        /// <param name="current">Current positions</param>
+        /// <returns>Whether any elf moved from the start positions, and the next positions</returns>
         private static (bool Moved, ISet<Point2D> Positions) Tick(int round, ISet<Point2D> current)
         {
             bool moved = false;
-            var proposals = new Dictionary<Point2D, Point2D>();
-            var proposalCounts = new Dictionary<Point2D, int>();
+            var proposals = new Dictionary<Point2D, Point2D>(current.Count);
+            var proposalCounts = new Dictionary<Point2D, int>(current.Count);
 
             // first part - each elf proposes a move
             foreach (Point2D elf in current)
@@ -112,40 +118,35 @@ namespace AdventOfCode
 
                 if (!occupied.Any())
                 {
-                    // don't move
+                    // don't move if there are no adjacent elves
                     proposals[elf] = elf;
                     proposalCounts[elf] = proposalCounts.GetOrCreate(elf) + 1;
                     continue;
                 }
 
-                for (int i = 0; i < 4; i++)
-                {
-                    Option<Point2D> tryMove = NextMove(elf, occupied, round + i);
+                Option<Point2D> tryMove = NextMove(elf, occupied, round);
 
-                    if (tryMove.HasValue)
-                    {
-                        Point2D proposedMove = tryMove.ValueOrFailure();
-                        proposals[elf] = proposedMove;
-                        proposalCounts[proposedMove] = proposalCounts.GetOrCreate(proposedMove) + 1;
-                        moved = true;
-                        break;
-                    }
-                }
-
-                if (!proposals.ContainsKey(elf))
-                {
-                    // elf wanted to move but couldn't, so it proposes to stay still
-                    proposals[elf] = elf;
-                    proposalCounts[elf] = proposalCounts.GetOrCreate(elf) + 1;
-                }
+                tryMove.Match(some: proposedMove =>
+                              {
+                                  // elf wants to move, so proposes the move
+                                  proposals[elf] = proposedMove;
+                                  proposalCounts[proposedMove] = proposalCounts.GetOrCreate(proposedMove) + 1;
+                                  moved = true;
+                              },
+                              none: () =>
+                              {
+                                  // elf wanted to move but couldn't, so it proposes to stay still
+                                  proposals[elf] = elf;
+                                  proposalCounts[elf] = proposalCounts.GetOrCreate(elf) + 1;
+                              });
             }
 
-            // second part - elves which proposed unique positions will move there
+            // second part - elves which proposed unique positions will move there, otherwise they stay still
             var next = new HashSet<Point2D>(current.Count);
 
             foreach (Point2D elf in current)
             {
-                var proposedMove = proposals[elf];
+                Point2D proposedMove = proposals[elf];
 
                 if (proposalCounts[proposedMove] == 1)
                 {
@@ -161,37 +162,48 @@ namespace AdventOfCode
             return (moved, next);
         }
 
+        /// <summary>
+        /// Try a move, depending on the current round and move index
+        /// </summary>
+        /// <param name="elf">Elf to move</param>
+        /// <param name="occupied">Occupied positions</param>
+        /// <param name="round">Round + move identifier</param>
+        /// <returns>The next move if that move is valid, otherwise None</returns>
         private static Option<Point2D> NextMove(Point2D elf, IList<(Point2D Location, CompassFlags Bearing)> occupied, int round)
         {
-            switch (round % 4)
+            for (int i = 0; i < 4; i++)
             {
-                case 0:
-                    if (!occupied.Any(o => o.Bearing.HasFlag(CompassFlags.North)))
-                    {
-                        return (elf with { Y = elf.Y - 1 }).Some();
-                    }
+                switch ((round + i) % 4)
+                {
+                    case 0:
+                        if (!occupied.Any(o => o.Bearing.HasFlag(CompassFlags.North)))
+                        {
+                            return (elf with { Y = elf.Y - 1 }).Some();
+                        }
 
-                    break;
-                case 1:
-                    if (!occupied.Any(o => o.Bearing.HasFlag(CompassFlags.South)))
-                    {
-                        return (elf with { Y = elf.Y + 1 }).Some();
-                    }
+                        break;
+                    case 1:
+                        if (!occupied.Any(o => o.Bearing.HasFlag(CompassFlags.South)))
+                        {
+                            return (elf with { Y = elf.Y + 1 }).Some();
+                        }
 
-                    break;
-                case 2:
-                    if (!occupied.Any(o => o.Bearing.HasFlag(CompassFlags.West)))
-                    {
-                        return (elf with { X = elf.X - 1 }).Some();
-                    }
+                        break;
+                    case 2:
+                        if (!occupied.Any(o => o.Bearing.HasFlag(CompassFlags.West)))
+                        {
+                            return (elf with { X = elf.X - 1 }).Some();
+                        }
 
-                    break;
-                case 3:
-                    if (!occupied.Any(o => o.Bearing.HasFlag(CompassFlags.East)))
-                    {
-                        return (elf with { X = elf.X + 1 }).Some();
-                    }
-                    break;
+                        break;
+                    case 3:
+                        if (!occupied.Any(o => o.Bearing.HasFlag(CompassFlags.East)))
+                        {
+                            return (elf with { X = elf.X + 1 }).Some();
+                        }
+
+                        break;
+                }
             }
 
             return Option.None<Point2D>();
