@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace AdventOfCode
 {
@@ -15,10 +16,11 @@ namespace AdventOfCode
             foreach (string line in input)
             {
                 long n = 0;
+                long power = 1;
 
                 for (int i = line.Length - 1; i >= 0; i--)
                 {
-                    int d = line[line.Length - 1 - i] switch
+                    int d = line[i] switch
                     {
                         '2' => 2,
                         '1' => 1,
@@ -28,20 +30,21 @@ namespace AdventOfCode
                         _ => throw new ArgumentOutOfRangeException()
                     };
 
-                    n += d * (long)Math.Pow(5, i);
+                    n += d * power;
+                    power *= 5;
                 }
 
                 total += n;
             }
 
             // reverse the process
-            List<char> result = new();
+            Stack<char> result = new();
 
             while (total > 0)
             {
                 (total, long remainder) = Math.DivRem(total + 2, 5);
 
-                result.Add(remainder switch
+                result.Push(remainder switch
                 {
                     0 => '=',
                     1 => '-',
@@ -51,8 +54,6 @@ namespace AdventOfCode
                     _ => throw new ArgumentOutOfRangeException()
                 });
             }
-
-            result.Reverse();
 
             return new string(result.ToArray());
         }
